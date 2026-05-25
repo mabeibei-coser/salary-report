@@ -1,16 +1,37 @@
-import React, { useState } from 'react';
-import { Box, Container, Typography, CircularProgress, Button, Alert } from '@mui/material';
+import React, { useEffect, useState } from 'react';
+import { Box, Container, Typography, CircularProgress, Button, Alert, IconButton, Tooltip } from '@mui/material';
 import RefreshIcon from '@mui/icons-material/Refresh';
+import LogoutIcon from '@mui/icons-material/Logout';
 import SearchForm from './components/SearchForm';
 import SalaryReport from './components/SalaryReport';
-import { fetchSalaryData } from './services/api';
+import LoginForm from './components/LoginForm';
+import { fetchSalaryData, fetchMe, logout } from './services/api';
 
 export default function App() {
+  const [me, setMe] = useState(null);
+  const [meReady, setMeReady] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [report, setReport] = useState(null);
   const [hasSearched, setHasSearched] = useState(false);
   const [queryParams, setQueryParams] = useState({ position: '', company: '', rank: '', education: '', city: '' });
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchMe()
+      .then((data) => {
+        if (!cancelled) setMe(data);
+      })
+      .catch(() => {
+        if (!cancelled) setMe(null);
+      })
+      .finally(() => {
+        if (!cancelled) setMeReady(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const handleSearch = async (params) => {
     setQueryParams(params);
@@ -22,7 +43,12 @@ export default function App() {
       const data = await fetchSalaryData(params.position, params.company, params.rank, params.education, params.city);
       setReport(data);
     } catch (err) {
-      setError(err.message || '查询失败，请稍后重试');
+      if (err.status === 401) {
+        setMe(null);
+        setError('登录已失效，请重新登录');
+      } else {
+        setError(err.message || '查询失败，请稍后重试');
+      }
     } finally {
       setLoading(false);
     }
@@ -32,50 +58,79 @@ export default function App() {
     if (queryParams.position) handleSearch(queryParams);
   };
 
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch {
+      /* ignore */
+    }
+    setMe(null);
+    setReport(null);
+    setHasSearched(false);
+    setError(null);
+  };
+
+  if (!meReady) {
+    return (
+      <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f4f6f9' }}>
+        <CircularProgress size={32} sx={{ color: '#1e3a5f' }} />
+      </Box>
+    );
+  }
+
+  if (!me) {
+    return (
+      <Box sx={{ minHeight: '100vh', py: { xs: 6, md: 10 }, backgroundColor: '#f4f6f9' }}>
+        <Container maxWidth="sm">
+          <Box sx={{ textAlign: 'center', mb: 4 }}>
+            <Typography variant="h4" sx={{ fontWeight: 700, fontSize: { xs: '1.5rem', md: '2rem' }, color: '#1e3a5f', letterSpacing: 1, mb: 0.5 }}>
+              2026岗位薪资查询平台
+            </Typography>
+            <Box sx={{ width: 40, height: 3, backgroundColor: '#2563eb', mx: 'auto', mt: 1.5, mb: 1.5, borderRadius: 2 }} />
+            <Typography variant="body2" sx={{ color: '#64748b' }}>
+              请先登录以使用查询功能
+            </Typography>
+          </Box>
+          <LoginForm onLoggedIn={(data) => setMe(data)} />
+        </Container>
+      </Box>
+    );
+  }
+
   return (
     <Box sx={{ minHeight: '100vh', py: { xs: 2, md: 4 }, backgroundColor: '#f4f6f9' }}>
       <Container maxWidth="lg">
-        {/* 标题 */}
-        <Box sx={{ textAlign: 'center', mb: 4, mt: { md: 2 } }}>
-          <Box sx={{ display: 'inline-flex', alignItems: 'flex-start', gap: 1 }}>
-            <Typography
-              variant="h3"
-              component="h1"
-              sx={{
-                fontWeight: 700,
-                fontSize: { xs: '1.5rem', md: '2rem' },
-                color: '#1e3a5f',
-                letterSpacing: 1,
-              }}
-            >
-              2026岗位薪资查询平台
-            </Typography>
-            <Box
-              component="span"
-              sx={{
-                backgroundColor: '#1e3a5f',
-                color: '#fff',
-                fontSize: { xs: '0.625rem', md: '0.7rem' },
-                fontWeight: 600,
-                px: 0.9,
-                py: 0.3,
-                borderRadius: '6px',
-                lineHeight: 1.2,
-                whiteSpace: 'nowrap',
-                mt: { xs: 0.3, md: 0.5 },
-                letterSpacing: 0.5,
-              }}
-            >
-              专业版
+        {/* 标题 + 当前账号 */}
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 4, mt: { md: 2 }, gap: 2 }}>
+          <Box sx={{ flex: 1, textAlign: 'center' }}>
+            <Box sx={{ display: 'inline-flex', alignItems: 'flex-start', gap: 1 }}>
+              <Typography
+                variant="h3"
+                component="h1"
+                sx={{ fontWeight: 700, fontSize: { xs: '1.5rem', md: '2rem' }, color: '#1e3a5f', letterSpacing: 1 }}
+              >
+                2026岗位薪资查询平台
+              </Typography>
+              <Box
+                component="span"
+                sx={{ backgroundColor: '#1e3a5f', color: '#fff', fontSize: { xs: '0.625rem', md: '0.7rem' }, fontWeight: 600, px: 0.9, py: 0.3, borderRadius: '6px', lineHeight: 1.2, whiteSpace: 'nowrap', mt: { xs: 0.3, md: 0.5 }, letterSpacing: 0.5 }}
+              >
+                专业版
+              </Box>
             </Box>
+            <Box sx={{ width: 40, height: 3, backgroundColor: '#2563eb', mx: 'auto', mt: 1.5, mb: 1.5, borderRadius: 2 }} />
+            <Typography variant="body2" sx={{ color: '#64748b', fontSize: { xs: '0.8rem', md: '0.875rem' }, letterSpacing: 2 }}>
+              岗位薪资查询  ·  行业城市分析  ·  高薪人群分析
+            </Typography>
           </Box>
-          <Box sx={{ width: 40, height: 3, backgroundColor: '#2563eb', mx: 'auto', mt: 1.5, mb: 1.5, borderRadius: 2 }} />
-          <Typography
-            variant="body2"
-            sx={{ color: '#64748b', fontSize: { xs: '0.8rem', md: '0.875rem' }, letterSpacing: 2 }}
-          >
-            岗位薪资查询  ·  行业城市分析  ·  高薪人群分析
-          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, color: '#64748b', fontSize: '0.85rem', mt: 1 }}>
+            <Typography variant="caption" sx={{ color: '#64748b' }}>{me.phone}</Typography>
+            <Tooltip title="退出登录">
+              <IconButton size="small" onClick={handleLogout} sx={{ color: '#94a3b8' }}>
+                <LogoutIcon sx={{ fontSize: 18 }} />
+              </IconButton>
+            </Tooltip>
+          </Box>
         </Box>
 
         <SearchForm onSearch={handleSearch} loading={loading} />
