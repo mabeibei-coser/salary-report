@@ -1,0 +1,96 @@
+import React, { useState } from 'react';
+import { Box, Container, Typography, CircularProgress, Button, Alert } from '@mui/material';
+import RefreshIcon from '@mui/icons-material/Refresh';
+import SearchForm from './components/SearchForm';
+import SalaryReport from './components/SalaryReport';
+import { fetchSalaryData } from './services/api';
+
+export default function App() {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [report, setReport] = useState(null);
+  const [hasSearched, setHasSearched] = useState(false);
+  const [queryParams, setQueryParams] = useState({ position: '', company: '', rank: '', education: '', city: '' });
+
+  const handleSearch = async (params) => {
+    setQueryParams(params);
+    setHasSearched(true);
+    setLoading(true);
+    setError(null);
+    setReport(null);
+    try {
+      const data = await fetchSalaryData(params.position, params.company, params.rank, params.education, params.city);
+      setReport(data);
+    } catch (err) {
+      setError(err.message || '查询失败，请稍后重试');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRetry = () => {
+    if (queryParams.position) handleSearch(queryParams);
+  };
+
+  return (
+    <Box sx={{ minHeight: '100vh', py: { xs: 2, md: 4 }, backgroundColor: '#f4f6f9' }}>
+      <Container maxWidth="lg">
+        {/* 标题 */}
+        <Box sx={{ textAlign: 'center', mb: 4, mt: { md: 2 } }}>
+          <Typography
+            variant="h3"
+            component="h1"
+            sx={{
+              fontWeight: 700,
+              fontSize: { xs: '1.5rem', md: '2rem' },
+              color: '#1e3a5f',
+              letterSpacing: 1,
+            }}
+          >
+            2026岗位薪资查询平台
+          </Typography>
+          <Box sx={{ width: 40, height: 3, backgroundColor: '#2563eb', mx: 'auto', mt: 1.5, mb: 1.5, borderRadius: 2 }} />
+          <Typography
+            variant="body2"
+            sx={{ color: '#64748b', fontSize: { xs: '0.8rem', md: '0.875rem' }, letterSpacing: 2 }}
+          >
+            岗位薪资查询  ·  行业城市分析  ·  高薪人群分析
+          </Typography>
+        </Box>
+
+        <SearchForm onSearch={handleSearch} loading={loading} />
+
+        {loading && (
+          <Box className="glass-card" sx={{ textAlign: 'center', py: 8, mt: 4 }}>
+            <CircularProgress size={40} sx={{ color: '#1e3a5f', mb: 2 }} />
+            <Typography variant="subtitle1" sx={{ color: 'text.secondary', mb: 1 }}>正在分析薪酬数据...</Typography>
+            <Typography variant="body2" sx={{ color: 'text.disabled' }}>AI 正在为您生成专业的薪酬分析报告，请稍候</Typography>
+          </Box>
+        )}
+
+        {error && !loading && (
+          <Box className="glass-card" sx={{ textAlign: 'center', py: 6, mt: 4 }}>
+            <Alert severity="error" sx={{ mb: 2, mx: 'auto', maxWidth: 500, borderRadius: 2 }}>{error}</Alert>
+            <Button variant="outlined" startIcon={<RefreshIcon />} onClick={handleRetry} sx={{ borderRadius: 2, borderColor: 'rgba(30,58,95,0.3)', color: '#1e3a5f' }}>重新查询</Button>
+          </Box>
+        )}
+
+        {report && !loading && !error && <SalaryReport report={report} />}
+
+        {!hasSearched && !loading && (
+          <Box className="glass-card" sx={{ textAlign: 'center', py: 10, px: 4, mt: 4 }}>
+            <Typography variant="h6" sx={{ color: 'text.secondary', mb: 1 }}>请选择查询条件后点击「查询薪酬」</Typography>
+            <Typography variant="body2" sx={{ color: 'text.disabled' }}>系统将调用谨世专用 AI 为您生成薪酬分析报告</Typography>
+          </Box>
+        )}
+      </Container>
+
+      <Box component="footer" sx={{ textAlign: 'center', py: 3, mt: 6, borderTop: '1px solid rgba(0,0,0,0.05)' }}>
+        <Typography variant="caption" sx={{ color: '#94a3b8', fontStyle: 'italic', display: 'block', mb: 0.5 }}>
+          本数据由谨世智能大数据库综合分析生成，最新更新于 {(() => { const d = new Date(); d.setDate(d.getDate() - 7); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })()}
+        </Typography>
+        <Typography variant="caption" sx={{ color: '#94a3b8' }}>2026岗位薪资查询平台  ·  数据由谨世智能大数据实验室提供  ·  仅供参考</Typography>
+      </Box>
+    </Box>
+  );
+}
