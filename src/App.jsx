@@ -37,18 +37,38 @@ export default function App() {
       <Container maxWidth="lg">
         {/* 标题 */}
         <Box sx={{ textAlign: 'center', mb: 4, mt: { md: 2 } }}>
-          <Typography
-            variant="h3"
-            component="h1"
-            sx={{
-              fontWeight: 700,
-              fontSize: { xs: '1.5rem', md: '2rem' },
-              color: '#1e3a5f',
-              letterSpacing: 1,
-            }}
-          >
-            2026岗位薪资查询平台
-          </Typography>
+          <Box sx={{ display: 'inline-flex', alignItems: 'flex-start', gap: 1 }}>
+            <Typography
+              variant="h3"
+              component="h1"
+              sx={{
+                fontWeight: 700,
+                fontSize: { xs: '1.5rem', md: '2rem' },
+                color: '#1e3a5f',
+                letterSpacing: 1,
+              }}
+            >
+              2026岗位薪资查询平台
+            </Typography>
+            <Box
+              component="span"
+              sx={{
+                backgroundColor: '#1e3a5f',
+                color: '#fff',
+                fontSize: { xs: '0.625rem', md: '0.7rem' },
+                fontWeight: 600,
+                px: 0.9,
+                py: 0.3,
+                borderRadius: '6px',
+                lineHeight: 1.2,
+                whiteSpace: 'nowrap',
+                mt: { xs: 0.3, md: 0.5 },
+                letterSpacing: 0.5,
+              }}
+            >
+              专业版
+            </Box>
+          </Box>
           <Box sx={{ width: 40, height: 3, backgroundColor: '#2563eb', mx: 'auto', mt: 1.5, mb: 1.5, borderRadius: 2 }} />
           <Typography
             variant="body2"
