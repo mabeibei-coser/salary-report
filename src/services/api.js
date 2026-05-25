@@ -4,7 +4,7 @@
  */
 
 const API_KEY = import.meta.env.VITE_GLM_API_KEY;
-const MODEL = import.meta.env.VITE_GLM_MODEL;
+const MODEL = import.meta.env.VITE_GLM_MODEL || 'astron-code-latest';
 // dev: BASE_URL = '/'  → '/api/chat'（vite proxy 转讯飞）
 // prod /a500/: BASE_URL = '/a500/' → '/a500/api/chat'（nginx 反代讯飞 + 注入 Authorization）
 const PROXY_URL = `${import.meta.env.BASE_URL}api/chat`;
