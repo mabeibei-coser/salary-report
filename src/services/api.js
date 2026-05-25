@@ -5,7 +5,9 @@
 
 const API_KEY = import.meta.env.VITE_GLM_API_KEY;
 const MODEL = import.meta.env.VITE_GLM_MODEL;
-const PROXY_URL = '/api/chat';
+// dev: BASE_URL = '/'  → '/api/chat'（vite proxy 转讯飞）
+// prod /a500/: BASE_URL = '/a500/' → '/a500/api/chat'（nginx 反代讯飞 + 注入 Authorization）
+const PROXY_URL = `${import.meta.env.BASE_URL}api/chat`;
 
 const SYSTEM_PROMPT = `你是一位资深的中国薪酬数据分析专家。你必须综合用户提供的【岗位名称、企业性质、职级、最高学历、所在城市】所有五项信息，生成一份精准的结构化薪酬数据报告，薪酬数据风格为偏低保守风格。
 
