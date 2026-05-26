@@ -100,9 +100,45 @@ export default function App() {
   return (
     <Box sx={{ minHeight: '100vh', py: { xs: 2, md: 4 }, backgroundColor: '#f4f6f9' }}>
       <Container maxWidth="lg">
-        {/* 标题 + 当前账号 */}
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 4, mt: { md: 2 }, gap: 2 }}>
-          <Box sx={{ flex: 1, textAlign: 'center' }}>
+        {/* 标题 + 当前账号
+            移动端：手机号独占顶部一行靠右，标题独占下面一行居中（避免被挤偏）
+            桌面端：左右横排 */}
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: { xs: 'column', md: 'row' },
+            justifyContent: 'space-between',
+            alignItems: { xs: 'stretch', md: 'flex-start' },
+            mb: { xs: 3, md: 4 },
+            mt: { md: 2 },
+            gap: { xs: 0.5, md: 2 },
+          }}
+        >
+          {/* 手机号 + 退出按钮 */}
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 0.5,
+              color: '#64748b',
+              fontSize: '0.85rem',
+              order: { xs: -1, md: 1 },
+              alignSelf: { xs: 'flex-end', md: 'auto' },
+              mt: { md: 1 },
+            }}
+          >
+            <Typography variant="caption" sx={{ color: '#64748b', fontSize: { xs: '0.7rem', md: '0.75rem' } }}>
+              {me.phone}
+            </Typography>
+            <Tooltip title="退出登录">
+              <IconButton size="small" onClick={handleLogout} sx={{ color: '#94a3b8', p: 0.5 }}>
+                <LogoutIcon sx={{ fontSize: 16 }} />
+              </IconButton>
+            </Tooltip>
+          </Box>
+
+          {/* 标题区 */}
+          <Box sx={{ flex: 1, textAlign: 'center', minWidth: 0 }}>
             <Box sx={{ display: 'inline-flex', alignItems: 'flex-start', gap: 1 }}>
               <Typography
                 variant="h3"
@@ -119,17 +155,9 @@ export default function App() {
               </Box>
             </Box>
             <Box sx={{ width: 40, height: 3, backgroundColor: '#2563eb', mx: 'auto', mt: 1.5, mb: 1.5, borderRadius: 2 }} />
-            <Typography variant="body2" sx={{ color: '#64748b', fontSize: { xs: '0.8rem', md: '0.875rem' }, letterSpacing: 2 }}>
+            <Typography variant="body2" sx={{ color: '#64748b', fontSize: { xs: '0.75rem', md: '0.875rem' }, letterSpacing: { xs: 1, md: 2 }, whiteSpace: 'nowrap' }}>
               岗位薪资查询  ·  行业城市分析  ·  高薪人群分析
             </Typography>
-          </Box>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, color: '#64748b', fontSize: '0.85rem', mt: 1 }}>
-            <Typography variant="caption" sx={{ color: '#64748b' }}>{me.phone}</Typography>
-            <Tooltip title="退出登录">
-              <IconButton size="small" onClick={handleLogout} sx={{ color: '#94a3b8' }}>
-                <LogoutIcon sx={{ fontSize: 18 }} />
-              </IconButton>
-            </Tooltip>
           </Box>
         </Box>
 
