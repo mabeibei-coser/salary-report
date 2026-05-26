@@ -166,10 +166,10 @@ export default function MarketPosition({ salaryData, marketComparison, salaryTre
       </Grid>
 
       {/* 较高薪资人群特点 */}
-      <Box sx={{ mt: 2.5, p: 2, borderRadius: 2, backgroundColor: 'rgba(30,58,95,0.02)', border: '1px solid rgba(0,0,0,0.04)' }}>
+      <Box sx={{ mt: 2.5, p: 2, borderRadius: 2, backgroundColor: 'rgba(199,159,74,0.04)', border: '1px solid rgba(199,159,74,0.15)' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.75 }}>
-          <PeopleIcon sx={{ fontSize: 15, color: ACCENT }} />
-          <Typography variant="caption" sx={{ fontWeight: 600, color: ACCENT }}>较高薪资人群特点</Typography>
+          <PeopleIcon sx={{ fontSize: 15, color: '#c79f4a' }} />
+          <Typography variant="caption" sx={{ fontWeight: 700, color: '#a37e2c', letterSpacing: 0.3 }}>较高薪资人群特点</Typography>
         </Box>
         <Typography variant="caption" sx={{ color: '#64748b', lineHeight: 1.7, fontSize: '0.75rem' }}>{highEarnerTraits}</Typography>
       </Box>

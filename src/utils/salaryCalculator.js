@@ -42,8 +42,9 @@ export function formatPercent(pct) {
  * @returns {{ text: string, color: string }}
  */
 export function getComparisonText(diffPct) {
+  // 颜色语义：金色 = 奖牌级（显著高），绿 = 高于，灰 = 持平，红 = 低于
   if (diffPct > 20) {
-    return { text: '显著高于市场平均水平', color: '#1b5e20' };
+    return { text: '显著高于市场平均水平', color: '#c79f4a' };
   } else if (diffPct > 5) {
     return { text: '高于市场平均水平', color: '#2e7d32' };
   } else if (diffPct > -5) {
