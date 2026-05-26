@@ -26,7 +26,8 @@ export default function MarketPosition({ salaryData, marketComparison, salaryTre
   const trend = Array.isArray(salaryTrend) && salaryTrend.length >= 2 ? salaryTrend : [];
   const VBW = 420;
   const VBH = 200;
-  const PAD = { l: 14, r: 14, t: 30, b: 30 };
+  // 加大左右边距，防止第一/最后一个数据点的金额和年份标签溢出
+  const PAD = { l: 26, r: 30, t: 32, b: 30 };
   const PW = VBW - PAD.l - PAD.r;
   const PH = VBH - PAD.t - PAD.b;
   let trendPoints = [];
@@ -119,26 +120,31 @@ export default function MarketPosition({ salaryData, marketComparison, salaryTre
                 {/* 折线 */}
                 <path d={linePath} fill="none" stroke={ACCENT} strokeWidth="2.2" strokeLinejoin="round" strokeLinecap="round" />
 
-                {/* 数据点 + 金额标签 + 年份 */}
+                {/* 数据点 + 金额标签 + 年份
+                    中间点用小号实心 navy；最后一个点放大并加金色描边（"当前"高光） */}
                 {trendPoints.map((p, i) => {
                   const isLast = i === trendPoints.length - 1;
                   return (
                     <g key={p.year}>
+                      {isLast && (
+                        <circle cx={p.x} cy={p.y} r={8} fill="rgba(199,159,74,0.18)" />
+                      )}
                       <circle
                         cx={p.x}
                         cy={p.y}
-                        r={isLast ? 5 : 3.2}
-                        fill={isLast ? ACCENT : '#fff'}
-                        stroke={ACCENT}
-                        strokeWidth={isLast ? 2 : 1.8}
+                        r={isLast ? 4.5 : 2.6}
+                        fill={ACCENT}
+                        stroke={isLast ? '#c79f4a' : 'none'}
+                        strokeWidth={isLast ? 2 : 0}
                       />
                       <text
                         x={p.x}
-                        y={p.y - 9}
+                        y={p.y - 11}
                         textAnchor="middle"
                         fontSize="10.5"
                         fontWeight={isLast ? 700 : 500}
-                        fill={isLast ? ACCENT : '#475569'}
+                        fill={isLast ? '#a37e2c' : '#475569'}
+                        fontFamily="'Geist Mono', ui-monospace, monospace"
                       >
                         ¥{(p.monthly / 1000).toFixed(1)}k
                       </text>
@@ -148,7 +154,7 @@ export default function MarketPosition({ salaryData, marketComparison, salaryTre
                         textAnchor="middle"
                         fontSize="10.5"
                         fontWeight={isLast ? 700 : 400}
-                        fill={isLast ? ACCENT : '#64748b'}
+                        fill={isLast ? ACCENT : '#94a3b8'}
                       >
                         {p.year}{isLast ? '（当前）' : ''}
                       </text>

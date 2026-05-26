@@ -93,10 +93,19 @@ export default function App() {
       <Box sx={{ minHeight: '100vh', py: { xs: 6, md: 10 }, backgroundColor: '#f4f6f9' }}>
         <Container maxWidth="sm">
           <Box sx={{ textAlign: 'center', mb: 4 }}>
-            <Typography variant="h4" sx={{ fontWeight: 700, fontSize: { xs: '1.5rem', md: '2rem' }, color: '#1e3a5f', letterSpacing: 1, mb: 0.5 }}>
+            <Typography
+              variant="h4"
+              sx={{
+                fontWeight: 700,
+                fontSize: { xs: '1.65rem', md: '2.25rem' },
+                color: '#1e3a5f',
+                letterSpacing: -0.5,
+                mb: 1.5,
+                lineHeight: 1.15,
+              }}
+            >
               2026岗位薪资查询平台
             </Typography>
-            <Box sx={{ width: 40, height: 3, backgroundColor: '#2563eb', mx: 'auto', mt: 1.5, mb: 1.5, borderRadius: 2 }} />
             <Typography variant="body2" sx={{ color: '#64748b' }}>
               请先登录以使用查询功能
             </Typography>
@@ -149,24 +158,39 @@ export default function App() {
 
           {/* 标题区 */}
           <Box sx={{ flex: 1, textAlign: 'center', minWidth: 0 }}>
-            <Box sx={{ display: 'inline-flex', alignItems: 'flex-start', gap: 1 }}>
+            <Box sx={{ display: 'inline-flex', alignItems: 'baseline', gap: 1.25 }}>
               <Typography
                 variant="h3"
                 component="h1"
-                sx={{ fontWeight: 700, fontSize: { xs: '1.5rem', md: '2rem' }, color: '#1e3a5f', letterSpacing: 1 }}
+                sx={{
+                  fontWeight: 700,
+                  fontSize: { xs: '1.65rem', md: '2.25rem' },
+                  color: '#1e3a5f',
+                  letterSpacing: -0.5,
+                  lineHeight: 1.15,
+                }}
               >
                 2026岗位薪资查询平台
               </Typography>
-              <Box
+              <Typography
                 component="span"
-                sx={{ backgroundColor: '#1e3a5f', color: '#fff', fontSize: { xs: '0.625rem', md: '0.7rem' }, fontWeight: 600, px: 0.9, py: 0.3, borderRadius: '6px', lineHeight: 1.2, whiteSpace: 'nowrap', mt: { xs: 0.3, md: 0.5 }, letterSpacing: 0.5 }}
+                sx={{
+                  color: '#a37e2c',
+                  fontSize: { xs: '0.7rem', md: '0.78rem' },
+                  fontWeight: 700,
+                  letterSpacing: '0.18em',
+                  fontVariant: 'small-caps',
+                  whiteSpace: 'nowrap',
+                }}
               >
-                专业版
-              </Box>
+                PRO
+              </Typography>
             </Box>
-            <Box sx={{ width: 40, height: 3, backgroundColor: '#2563eb', mx: 'auto', mt: 1.5, mb: 1.5, borderRadius: 2 }} />
-            <Typography variant="body2" sx={{ color: '#64748b', fontSize: { xs: '0.75rem', md: '0.875rem' }, letterSpacing: { xs: 1, md: 2 }, whiteSpace: 'nowrap' }}>
-              岗位薪资查询  ·  行业城市分析  ·  高薪人群分析
+            <Typography
+              variant="body2"
+              sx={{ color: '#64748b', mt: 1, fontSize: { xs: '0.78rem', md: '0.875rem' } }}
+            >
+              为薪酬团队和业务方提供岗位级薪资数据分析
             </Typography>
           </Box>
         </Box>
@@ -254,11 +278,25 @@ export default function App() {
         )}
       </Container>
 
-      <Box component="footer" sx={{ textAlign: 'center', py: 3, mt: 6, borderTop: '1px solid rgba(0,0,0,0.05)' }}>
-        <Typography variant="caption" sx={{ color: '#94a3b8', fontStyle: 'italic', display: 'block', mb: 0.5 }}>
-          本数据由谨世智能大数据库综合分析生成，最新更新于 {(() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; })()}
-        </Typography>
-        <Typography variant="caption" sx={{ color: '#94a3b8' }}>2026岗位薪资查询平台  ·  数据由谨世智能大数据实验室提供  ·  仅供参考</Typography>
+      <Box component="footer" sx={{ py: 3, mt: 6, borderTop: '1px solid rgba(0,0,0,0.05)' }}>
+        <Container maxWidth="lg">
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: { xs: 'column', sm: 'row' },
+              justifyContent: 'space-between',
+              alignItems: { xs: 'flex-start', sm: 'center' },
+              gap: 1,
+            }}
+          >
+            <Typography variant="caption" sx={{ color: '#94a3b8' }}>
+              数据由谨世智能大数据实验室提供 · 更新于 {(() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; })()} · 仅供参考
+            </Typography>
+            <Typography variant="caption" sx={{ color: '#cbd5e1', fontSize: '0.7rem' }} className="num-mono">
+              v1.1.3
+            </Typography>
+          </Box>
+        </Container>
       </Box>
     </Box>
   );
