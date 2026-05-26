@@ -194,7 +194,7 @@ const SYSTEM_PROMPT = `你是一位资深的中国薪酬数据分析专家。你
   "housingFund": {"p25": 金额, "p50": 金额, "p75": 金额},
   "hourlyRate": {"p25": 金额, "p50": 金额, "p75": 金额},
   "marketComparison": {"marketAvgMonthly": 金额, "diffPct": 百分比整数},
-  "marketRanking": [{"company": "企业名称", "monthly": 金额, "annual": 金额}],
+  "salaryTrend": [{"year": 年份, "monthly": 月薪}],
   "industryAnalysis": [{"industry": "行业", "description": "描述", "monthlyRange": "范围", "annualRange": "范围", "demandLevel": "高/中/低", "salaryIncrease": "上一年度涨薪如 5.5%"}],
   "cityAnalysis": [{"city": "城市名", "monthlyAvg": 月薪均值, "costIndex": 生活成本指数(以北京=100), "salaryLevel": "高/中/低", "advantage": "该城市优势一句话"}],
   "highEarnerTraits": "该岗位较高薪资人群的特点描述，200字以内"
@@ -217,8 +217,8 @@ const SYSTEM_PROMPT = `你是一位资深的中国薪酬数据分析专家。你
 - equity股权：初创公司和外资企业较高，国有企业通常为0
 - bonusMonths年终奖月数：外企2-5个月，国企1-4个月，民企1-3个月，初创0-5个月
 
-### 3. marketRanking 市场排名
-必须包含5种企业性质：外资企业、合资企业、民营企业、国有企业、初创公司。按monthly降序排列。
+### 3. salaryTrend 近5年薪酬趋势
+必须返回 5 个数据点，year 依次为 2022、2023、2024、2025、2026（升序）。monthly 为该年该岗位在指定企业性质 + 城市的月薪中位数（元，整数）。2026 年的值需与本报告 monthly.p50 一致。趋势应符合该行业近 5 年的真实走势（例如：互联网/算法 2022-2023 上涨、2024 回调、2025-2026 缓涨；传统行业稳步小幅上涨；新能源近两年明显上涨等），不要简单线性递增。
 
 ### 4. industryAnalysis 细分行业（必须9个）
 根据岗位推荐相关细分行业，如"金融科技"、"在线教育"、"电商零售"等。每个行业给出月薪范围、年薪范围、人才需求等级、"salaryIncrease"为上一年度行业平均涨薪幅度（必须在1.5%-5.5%之间，格式如"3.2%"）。
@@ -264,11 +264,23 @@ function validateAndNormalize(data, params) {
   data.marketComparison.marketAvgMonthly = Math.round(Number(data.marketComparison.marketAvgMonthly) || 0);
   data.marketComparison.diffPct = Math.round(Number(data.marketComparison.diffPct) || 0);
 
-  data.marketRanking = (Array.isArray(data.marketRanking) ? data.marketRanking : []).map((item) => ({
-    company: item.company || "",
+  data.salaryTrend = (Array.isArray(data.salaryTrend) ? data.salaryTrend : []).map((item) => ({
+    year: Math.round(Number(item.year) || 0),
     monthly: Math.round(Number(item.monthly) || 0),
-    annual: Math.round(Number(item.annual) || 0),
-  }));
+  })).filter((item) => item.year > 0 && item.monthly > 0)
+    .sort((a, b) => a.year - b.year);
+
+  // 兜底：AI 没返回 salaryTrend 或返回不足 5 年时，基于当前 p50 回填一条平稳趋势，保证图能渲染
+  if (data.salaryTrend.length < 5) {
+    const p50 = data.monthly.p50 || 0;
+    if (p50 > 0) {
+      data.salaryTrend = [2022, 2023, 2024, 2025, 2026].map((y, i) => ({
+        year: y,
+        monthly: Math.round(p50 * (0.82 + 0.045 * i) / 100) * 100,
+      }));
+      data.salaryTrend[4].monthly = p50;
+    }
+  }
 
   data.industryAnalysis = (Array.isArray(data.industryAnalysis) ? data.industryAnalysis : []).map((item) => ({
     industry: item.industry || "未命名行业",

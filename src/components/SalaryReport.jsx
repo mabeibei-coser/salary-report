@@ -12,7 +12,7 @@ import CityAnalysis from './CityAnalysis';
 export default function SalaryReport({ report }) {
   const salaryData = report;
   const marketComparison = report.marketComparison;
-  const marketRanking = report.marketRanking;
+  const salaryTrend = report.salaryTrend;
   const industryAnalysis = report.industryAnalysis;
   const cityAnalysis = report.cityAnalysis;
 
@@ -34,7 +34,7 @@ export default function SalaryReport({ report }) {
       <MarketPosition
         salaryData={salaryData}
         marketComparison={marketComparison}
-        marketRanking={marketRanking}
+        salaryTrend={salaryTrend}
       />
       <CityAnalysis cityAnalysis={cityAnalysis} />
       <IndustryAnalysis industryAnalysis={industryAnalysis} />
