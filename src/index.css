@@ -18,14 +18,23 @@
 }
 
 html, body {
-  font-family: 'Inter', 'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'Geist', 'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   background-color: var(--bg-primary);
   color: var(--text-primary);
   min-height: 100vh;
   overflow-x: hidden;
+  /* 全局开启等宽数字：所有金额、百分比、k 字符串自动对齐 */
+  font-feature-settings: "tnum" 1, "lnum" 1, "cv11" 1;
 }
 
 body { background-image: none; }
+
+/* 数据/金额专用：等宽字体 + tabular figures（适用于纯数字密集区，如折线图标签、表格） */
+.num-mono {
+  font-family: 'Geist Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  font-feature-settings: "tnum" 1, "lnum" 1;
+  font-variant-numeric: tabular-nums;
+}
 
 .glass-card {
   background: #ffffff;
