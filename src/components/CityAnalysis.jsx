@@ -40,12 +40,12 @@ export default function CityAnalysis({ cityAnalysis }) {
 
                 {/* 薪酬水平条形图 */}
                 <Box sx={{ height: 6, borderRadius: 3, backgroundColor: 'rgba(0,0,0,0.04)', overflow: 'hidden', mb: 1.5 }}>
-                  <Box sx={{ height: '100%', width: `${barPct}%`, borderRadius: 3, backgroundColor: ACCENT, transition: 'width 1s ease-out' }} />
+                  <Box sx={{ height: '100%', width: `${barPct}%`, borderRadius: 3, background: `linear-gradient(90deg, #bbdefb, #42a5f5)`, transition: 'width 1s ease-out' }} />
                 </Box>
 
                 {/* 底部：城市优势 */}
                 <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.25 }}>
-                  <CheckCircleIcon sx={{ fontSize: 11, color: ACCENT, mt: 0.2, flexShrink: 0 }} />
+                  <CheckCircleIcon sx={{ fontSize: 11, color: '#2563eb', mt: 0.2, flexShrink: 0 }} />
                   <Typography variant="caption" sx={{ color: '#64748b', lineHeight: 1.5, fontSize: '0.7rem' }}>{item.advantage}</Typography>
                 </Box>
               </Box>

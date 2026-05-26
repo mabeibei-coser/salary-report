@@ -4,7 +4,6 @@ import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import TrendingFlatIcon from '@mui/icons-material/TrendingFlat';
 
 const ACCENT = '#1e3a5f';
-const GOLD = '#c79f4a';
 
 /** 将范围字符串转为 k 单位。兼容 "8000-11000"、"8k-11k"、"8,000-11,000"、"20k-35k" 等格式 */
 function toKUnit(rangeStr) {
@@ -41,9 +40,9 @@ export default function IndustryAnalysis({ industryAnalysis }) {
                 {/* 行业名称 + 需求等级 */}
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
                   <Typography variant="body2" sx={{ fontWeight: 600, color: '#1a1a2e' }}>{item.industry}</Typography>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.25, px: 1, py: 0.25, borderRadius: 1, backgroundColor: item.demandLevel === '高' ? 'rgba(199,159,74,0.10)' : 'rgba(148,163,184,0.08)' }}>
-                    {item.demandLevel === '高' ? <TrendingUpIcon sx={{ fontSize: 13, color: GOLD }} /> : <TrendingFlatIcon sx={{ fontSize: 13, color: '#94a3b8' }} />}
-                    <Typography variant="caption" sx={{ color: item.demandLevel === '高' ? GOLD : '#94a3b8', fontWeight: 600 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.25, px: 1, py: 0.25, borderRadius: 1, backgroundColor: item.demandLevel === '高' ? 'rgba(37,99,235,0.06)' : 'rgba(148,163,184,0.06)' }}>
+                    {item.demandLevel === '高' ? <TrendingUpIcon sx={{ fontSize: 13, color: '#2563eb' }} /> : <TrendingFlatIcon sx={{ fontSize: 13, color: '#94a3b8' }} />}
+                    <Typography variant="caption" sx={{ color: item.demandLevel === '高' ? '#2563eb' : '#94a3b8', fontWeight: 500 }}>
                       需求{item.demandLevel}
                     </Typography>
                   </Box>
@@ -68,10 +67,10 @@ export default function IndustryAnalysis({ industryAnalysis }) {
                 <Box sx={{ mt: 'auto' }}>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
                     <Typography variant="caption" sx={{ color: '#94a3b8', fontSize: '0.65rem' }}>上一年度涨薪幅度</Typography>
-                    <Typography variant="caption" sx={{ fontWeight: 700, color: salaryNum >= 4 ? GOLD : '#94a3b8', fontSize: '0.75rem' }}>{item.salaryIncrease}</Typography>
+                    <Typography variant="caption" sx={{ fontWeight: 600, color: salaryNum >= 4 ? '#1b5e20' : '#94a3b8', fontSize: '0.75rem' }}>{item.salaryIncrease}</Typography>
                   </Box>
                   <Box sx={{ height: 4, borderRadius: 2, backgroundColor: 'rgba(0,0,0,0.04)', overflow: 'hidden' }}>
-                    <Box sx={{ height: '100%', width: `${Math.min(salaryNum * 18, 100)}%`, borderRadius: 2, backgroundColor: salaryNum >= 4 ? GOLD : ACCENT }} />
+                    <Box sx={{ height: '100%', width: `${Math.min(salaryNum * 18, 100)}%`, borderRadius: 2, background: `linear-gradient(90deg, #bbdefb, #42a5f5)` }} />
                   </Box>
                 </Box>
               </Box>
