@@ -158,7 +158,7 @@ export default function App() {
 
           {/* 标题区 */}
           <Box sx={{ flex: 1, textAlign: 'center', minWidth: 0 }}>
-            <Box sx={{ display: 'inline-flex', alignItems: 'baseline', gap: 1.25 }}>
+            <Box sx={{ display: 'inline-flex', alignItems: 'flex-start', gap: 1 }}>
               <Typography
                 variant="h3"
                 component="h1"
@@ -172,19 +172,24 @@ export default function App() {
               >
                 2026岗位薪资查询平台
               </Typography>
-              <Typography
+              <Box
                 component="span"
                 sx={{
-                  color: '#a37e2c',
-                  fontSize: { xs: '0.7rem', md: '0.78rem' },
-                  fontWeight: 700,
-                  letterSpacing: '0.18em',
-                  fontVariant: 'small-caps',
+                  backgroundColor: '#1e3a5f',
+                  color: '#fff',
+                  fontSize: { xs: '0.625rem', md: '0.7rem' },
+                  fontWeight: 600,
+                  px: 0.9,
+                  py: 0.3,
+                  borderRadius: '6px',
+                  lineHeight: 1.2,
                   whiteSpace: 'nowrap',
+                  mt: { xs: 0.5, md: 0.9 },
+                  letterSpacing: 0.5,
                 }}
               >
-                PRO
-              </Typography>
+                专业版
+              </Box>
             </Box>
             <Typography
               variant="body2"
