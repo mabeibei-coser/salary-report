@@ -182,7 +182,7 @@ export default function App() {
 
         {!hasSearched && !loading && (
           <Box className="glass-card" sx={{ textAlign: 'center', py: 10, px: 4, mt: 4 }}>
-            <Typography variant="h6" sx={{ color: 'text.secondary', mb: 1 }}>请选择查询条件后点击「查询薪酬」</Typography>
+            <Typography variant="h6" sx={{ color: 'text.secondary', mb: 1, fontSize: { xs: '1rem', md: '1.25rem' }, whiteSpace: 'nowrap' }}>填写条件，点击查询薪酬</Typography>
             <Typography variant="body2" sx={{ color: 'text.disabled' }}>系统将调用谨世专用 AI 为您生成薪酬分析报告</Typography>
           </Box>
         )}
@@ -190,7 +190,7 @@ export default function App() {
 
       <Box component="footer" sx={{ textAlign: 'center', py: 3, mt: 6, borderTop: '1px solid rgba(0,0,0,0.05)' }}>
         <Typography variant="caption" sx={{ color: '#94a3b8', fontStyle: 'italic', display: 'block', mb: 0.5 }}>
-          本数据由谨世智能大数据库综合分析生成，最新更新于 {(() => { const d = new Date(); d.setDate(d.getDate() - 7); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })()}
+          本数据由谨世智能大数据库综合分析生成，最新更新于 {(() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; })()}
         </Typography>
         <Typography variant="caption" sx={{ color: '#94a3b8' }}>2026岗位薪资查询平台  ·  数据由谨世智能大数据实验室提供  ·  仅供参考</Typography>
       </Box>
