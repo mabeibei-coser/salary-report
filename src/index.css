@@ -8,8 +8,10 @@
   --bg-primary: #f4f6f9;
   --card-bg: #ffffff;
   --card-border: rgba(0, 0, 0, 0.06);
-  --accent: #1e3a5f;
-  --accent-light: #2563eb;
+  --accent: #1e3a5f;        /* navy 主色 */
+  --accent-light: #2563eb;  /* navy 浅版（链接/次要按钮 hover） */
+  --gold: #c79f4a;          /* 金色高光：+XX%、CTA hover */
+  --gold-soft: #e5cf8d;     /* 金色淡版：背景 chip */
   --text-primary: #1a1a2e;
   --text-secondary: #64748b;
   --text-muted: #94a3b8;
