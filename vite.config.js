@@ -12,6 +12,9 @@ export default defineConfig(({ mode }) => {
     plugins: [react()],
     server: {
       port: 3000,
+      // 端口被占时直接报错退出，不要静默 fallback 到 3001/3002——
+      // 否则 launch.json / preview tool 会一直连 3000 失败，看起来像启动了其实换了口
+      strictPort: true,
       open: true,
       proxy: {
         '/api': {
