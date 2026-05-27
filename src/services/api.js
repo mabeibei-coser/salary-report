@@ -43,6 +43,7 @@ export async function logout() {
 /**
  * 调用一次薪酬查询（服务端会同步入库）。
  * 兼容旧签名：`fetchSalaryData(position, company, rank, education, city)`
+ * 返回 { report, cached, durationMs }，调用方可据此决定是否补足最小 loading 时长
  */
 export async function fetchSalaryData(position, company, rank, education, city) {
   const controller = new AbortController();
@@ -62,7 +63,7 @@ export async function fetchSalaryData(position, company, rank, education, city) 
       err.status = res.status;
       throw err;
     }
-    return data.report;
+    return { report: data.report, cached: !!data.cached, durationMs: data.durationMs ?? 0 };
   } catch (err) {
     clearTimeout(timeoutId);
     if (err.name === 'AbortError') {

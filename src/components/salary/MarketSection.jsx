@@ -1,8 +1,7 @@
 // 复刻自 admin-hub/components/report/salary/market-section.tsx
 import React from 'react';
-import { ArrowUp, ArrowDown, Minus, Users, TrendingUp } from 'lucide-react';
+import { Users, TrendingUp } from 'lucide-react';
 import SectionWrapper from './SectionWrapper';
-import { formatNumber, generateSummary, getComparisonStyle } from '../../utils/salaryCalculator';
 
 const VBW = 420;
 const VBH = 200;
@@ -11,11 +10,6 @@ const PW = VBW - PAD.l - PAD.r;
 const PH = VBH - PAD.t - PAD.b;
 
 export default function MarketSection({ data, index, total }) {
-  const { diffPct } = data.marketComparison;
-  const style = getComparisonStyle(diffPct);
-  const summary = generateSummary(data.position, data.company, diffPct, data.monthly.p50);
-  const DiffIcon = diffPct > 5 ? ArrowUp : diffPct < -5 ? ArrowDown : Minus;
-
   // 近 5 年薪酬趋势（SVG 折线）
   const trend = Array.isArray(data.salaryTrend) && data.salaryTrend.length >= 2 ? data.salaryTrend : [];
   let trendPoints = [];
@@ -42,31 +36,27 @@ export default function MarketSection({ data, index, total }) {
   return (
     <SectionWrapper id="market" title="市场定位分析" index={index} total={total}>
       <div className="grid md:grid-cols-12 gap-4">
+        {/* 左侧：较高薪资人群特点（原本在下方，挪上来） */}
         <div
-          className="md:col-span-5 rounded-lg p-4"
-          style={{ border: '1px solid var(--report-border)', background: 'var(--cyan-50)' }}
+          className="md:col-span-5 rounded-lg p-4 flex flex-col"
+          style={{ border: '1px solid var(--report-border)', background: 'oklch(0.985 0.006 240)' }}
         >
-          <div className="text-[11px]" style={{ color: 'var(--report-ink-muted)' }}>
-            当前月薪 vs 市场均值
+          <div className="flex items-center gap-1.5 mb-2" style={{ color: 'var(--cyan-700)' }}>
+            <Users className="size-4" />
+            <span className="text-[12px] font-semibold">较高薪资人群特点</span>
           </div>
-          <div className="mt-1 text-[26px] font-bold tabular-nums leading-none" style={{ color: 'var(--navy-900)' }}>
-            ¥{formatNumber(data.monthly.p50)}
-          </div>
-          <div className="mt-1 flex items-center gap-1">
-            <DiffIcon className="size-4" />
-            <span className="text-[18px] font-semibold tabular-nums">
-              {diffPct > 0 ? '+' : ''}
-              {diffPct}%
-            </span>
-            <span className="status-pill ml-2" data-tone={style.tone}>
-              {style.text}
-            </span>
-          </div>
-          <p className="mt-3 text-[13px] leading-relaxed" style={{ color: 'var(--report-ink-soft)' }}>
-            {summary}
-          </p>
+          {data.highEarnerTraits ? (
+            <p className="text-[13px] leading-relaxed flex-1" style={{ color: 'var(--report-ink-soft)' }}>
+              {data.highEarnerTraits}
+            </p>
+          ) : (
+            <p className="text-[12px] leading-relaxed flex-1" style={{ color: 'var(--report-ink-muted)' }}>
+              暂无该岗位的高薪人群画像数据
+            </p>
+          )}
         </div>
 
+        {/* 右侧：近 5 年薪酬趋势 */}
         <div className="md:col-span-7">
           <div className="flex items-center justify-between mb-2">
             <div className="text-[11.5px] font-medium" style={{ color: 'var(--report-ink-muted)' }}>
@@ -172,20 +162,6 @@ export default function MarketSection({ data, index, total }) {
         </div>
       </div>
 
-      {data.highEarnerTraits && (
-        <div
-          className="mt-4 rounded-lg p-3"
-          style={{ border: '1px solid var(--report-border)', background: 'oklch(0.985 0.006 240)' }}
-        >
-          <div className="flex items-center gap-1.5 mb-1" style={{ color: 'var(--cyan-700)' }}>
-            <Users className="size-4" />
-            <span className="text-[11.5px] font-semibold">较高薪资人群特点</span>
-          </div>
-          <p className="text-[12.5px] leading-relaxed" style={{ color: 'var(--report-ink-soft)' }}>
-            {data.highEarnerTraits}
-          </p>
-        </div>
-      )}
     </SectionWrapper>
   );
 }
