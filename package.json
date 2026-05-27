@@ -1,7 +1,7 @@
 {
   "name": "salary-query-system",
   "private": true,
-  "version": "1.2.5",
+  "version": "1.2.6",
   "type": "module",
   "scripts": {
     "dev": "concurrently -k -n vite,api -c green,cyan \"vite\" \"node server.js\"",
