@@ -9,7 +9,9 @@ dotenv.config({ path: path.join(__dirname, ".env") });
 
 const { default: express } = await import("express");
 const { getSession } = await import("./lib/session.js");
-const { getDb, upsertUserByPhone, insertReport } = await import("./lib/db.js");
+const { getDb, upsertUserByPhone, insertReport, findCachedReport } = await import("./lib/db.js");
+
+const QUERY_CACHE_MS = 30 * 24 * 60 * 60 * 1000; // 30 天内同条件查询直接复用历史结果，保证一致性
 const PORT = Number(process.env.PORT) || 4001;
 const IFLYTEK_URL =
   process.env.IFLYTEK_API_URL ||
@@ -78,6 +80,32 @@ app.post(
     if (![position, company, rank, education, city].every((v) => typeof v === "string" && v.trim())) {
       return res.status(400).json({ error: "请填齐 5 项查询条件" });
     }
+    // 缓存命中：30 天内有相同条件（5 项全等）的查询，直接复用历史结果
+    const cached = findCachedReport({ position, company, rank, education, city }, QUERY_CACHE_MS);
+    if (cached) {
+      let cachedReport = null;
+      try {
+        cachedReport = JSON.parse(cached.report_json);
+      } catch {
+        cachedReport = null; // 老记录损坏，落到下面重新调 AI
+      }
+      if (cachedReport) {
+        const reportId = insertReport({
+          userId: req.session.userId,
+          userPhone: req.session.phone,
+          createdAt: Date.now(),
+          position, company, rank,
+          rankLabel: cachedReport.rankLabel || cached.rank_label || null,
+          education, city,
+          report: cachedReport,
+          durationMs: 0,
+          ip: req.ip,
+          userAgent: req.headers["user-agent"] || null,
+        });
+        return res.json({ ok: true, reportId, report: cachedReport, durationMs: 0, cached: true });
+      }
+    }
+
     if (!IFLYTEK_API_KEY) {
       return res.status(500).json({ error: "服务器未配置 AI API key" });
     }
@@ -97,7 +125,7 @@ app.post(
             { role: "user", content: buildUserMessage({ position, company, rank, education, city }) },
           ],
           temperature: 0.3,
-          max_tokens: 4096,
+          max_tokens: 6144,
         }),
         signal: AbortSignal.timeout(60_000),
       });
@@ -205,7 +233,7 @@ const SYSTEM_PROMPT = `你是一位资深的中国薪酬数据分析专家。你
 ### 1. 五维参数都必须影响数据
 - **岗位名称**：决定薪酬基准。技术岗（开发/算法/架构）高于职能岗（行政/人事），管理岗高于执行岗
 - **企业性质**：外资企业薪酬最高（系数约1.10），合资次之（1.05），国有企业福利好、公积金比例高但薪酬较低（0.85）。民营企业居中，初创公司波动大
-- **职级**：P序列1-9逐级递增，P5为高级独立负责，M1-M5管理序列薪酬高于同级别P序列
+- **职级**：P序列1-9逐级递增，P4为高级/独立负责（基准位），P5为资深/团队核心，P7为高级专家，P8为领域负责人，P9为首席。M1-M5管理序列薪酬高于同级别P序列
 - **最高学历**：博士>硕士>MBA>本科>大专>高中。硕士比本科高约15-20%，博士比硕士高约15-20%。MBA在管理岗有额外加成
 - **所在城市**：用户选择城市层级，需根据层级自动生成该层级的典型城市数据。一线城市（北上广深）薪酬为基准100%，二线城市（杭州/成都/武汉/南京/苏州/西安等）约为一线80-85%，三四线城市约为一线50-70%
 
@@ -218,9 +246,9 @@ const SYSTEM_PROMPT = `你是一位资深的中国薪酬数据分析专家。你
 - bonusMonths年终奖月数：外企2-5个月，国企1-4个月，民企1-3个月，初创0-5个月
 
 ### 3. salaryTrend 近5年薪酬趋势
-必须返回 5 个数据点，year 依次为 2022、2023、2024、2025、2026（升序）。monthly 为该年该岗位在指定企业性质 + 城市的月薪中位数（元，整数）。2026 年的值需与本报告 monthly.p50 一致。趋势应符合该行业近 5 年的真实走势（例如：互联网/算法 2022-2023 上涨、2024 回调、2025-2026 缓涨；传统行业稳步小幅上涨；新能源近两年明显上涨等），不要简单线性递增。
+必须返回 5 个数据点，year 依次为 2022、2023、2024、2025、2026（升序）。monthly 为该年该岗位在指定企业性质 + 城市的月薪中位数（元，整数）。2026 年的值需与本报告 monthly.p50 一致。**必须严格单调递增**：每一年必须比上一年高，每年涨幅 0%-5.5% 之间（根据该行业实际行情估算，可以快涨或缓涨，但不允许回调/下降/持平）。
 
-### 4. industryAnalysis 细分行业（必须9个）
+### 4. industryAnalysis 细分行业（必须15个）
 根据岗位推荐相关细分行业，如"金融科技"、"在线教育"、"电商零售"等。每个行业给出月薪范围、年薪范围、人才需求等级、"salaryIncrease"为上一年度行业平均涨薪幅度（必须在1.5%-5.5%之间，格式如"3.2%"）。
 
 ### 5. cityAnalysis 城市对比（6个典型城市）
@@ -270,15 +298,31 @@ function validateAndNormalize(data, params) {
   })).filter((item) => item.year > 0 && item.monthly > 0)
     .sort((a, b) => a.year - b.year);
 
-  // 兜底：AI 没返回 salaryTrend 或返回不足 5 年时，基于当前 p50 回填一条平稳趋势，保证图能渲染
-  if (data.salaryTrend.length < 5) {
+  // 兜底 + 单调性校正：
+  // 1) 长度不足 5 时，基于当前 p50 回填线性递增（每年约 4.5%）
+  // 2) AI 返回了 5 个点但出现持平/下降时，用前一年 × 1.025 修正成单调递增，再把末年钉成 p50
+  const trendOk = data.salaryTrend.length === 5
+    && data.salaryTrend.every((d, i) => i === 0 || Number(d.monthly) > Number(data.salaryTrend[i - 1].monthly));
+  if (!trendOk) {
     const p50 = data.monthly.p50 || 0;
     if (p50 > 0) {
-      data.salaryTrend = [2022, 2023, 2024, 2025, 2026].map((y, i) => ({
-        year: y,
-        monthly: Math.round(p50 * (0.82 + 0.045 * i) / 100) * 100,
-      }));
-      data.salaryTrend[4].monthly = p50;
+      if (data.salaryTrend.length === 5) {
+        // 保留 AI 估算的形状，但强制每年至少涨 2.5%（落在 0-5.5% 中间值）
+        for (let i = 1; i < 5; i++) {
+          const prev = Number(data.salaryTrend[i - 1].monthly);
+          const cur = Number(data.salaryTrend[i].monthly);
+          if (!(cur > prev)) {
+            data.salaryTrend[i].monthly = Math.round(prev * 1.025 / 100) * 100;
+          }
+        }
+        data.salaryTrend[4].monthly = p50;
+      } else {
+        data.salaryTrend = [2022, 2023, 2024, 2025, 2026].map((y, i) => ({
+          year: y,
+          monthly: Math.round(p50 * (0.82 + 0.045 * i) / 100) * 100,
+        }));
+        data.salaryTrend[4].monthly = p50;
+      }
     }
   }
 

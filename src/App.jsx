@@ -97,20 +97,26 @@ export default function App() {
     );
   }
 
+  const dbVersion = (() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+  })();
+
   return (
     <Box sx={{ minHeight: '100vh', py: { xs: 2, md: 4 }, backgroundColor: '#f4f6f9' }}>
       <Container maxWidth="lg">
         {/* 标题 + 当前账号
-            移动端：手机号独占顶部一行靠右，标题独占下面一行居中（避免被挤偏）
-            桌面端：左右横排 */}
+            移动端：手机号独占顶部一行靠右，标题独占下面一行居中
+            桌面端：手机号绝对定位右上角（脱离 flex 流），标题在容器内真正居中 */}
         <Box
           sx={{
+            position: 'relative',
             display: 'flex',
             flexDirection: { xs: 'column', md: 'row' },
-            justifyContent: 'space-between',
-            alignItems: { xs: 'stretch', md: 'flex-start' },
+            justifyContent: { xs: 'flex-start', md: 'center' },
+            alignItems: { xs: 'stretch', md: 'center' },
             mb: { xs: 3, md: 4 },
-            mt: { md: 2 },
+            mt: { md: 1 },
             gap: { xs: 0.5, md: 2 },
           }}
         >
@@ -122,9 +128,11 @@ export default function App() {
               gap: 0.5,
               color: '#64748b',
               fontSize: '0.85rem',
-              order: { xs: -1, md: 1 },
+              order: { xs: -1, md: 0 },
               alignSelf: { xs: 'flex-end', md: 'auto' },
-              mt: { md: 1 },
+              position: { md: 'absolute' },
+              top: { md: 0 },
+              right: { md: 0 },
             }}
           >
             <Typography variant="caption" sx={{ color: '#64748b', fontSize: { xs: '0.7rem', md: '0.75rem' } }}>
@@ -183,14 +191,14 @@ export default function App() {
         {!hasSearched && !loading && (
           <Box className="glass-card" sx={{ textAlign: 'center', py: 10, px: 4, mt: 4 }}>
             <Typography variant="h6" sx={{ color: 'text.secondary', mb: 1, fontSize: { xs: '1rem', md: '1.25rem' }, whiteSpace: 'nowrap' }}>填写条件，点击查询薪酬</Typography>
-            <Typography variant="body2" sx={{ color: 'text.disabled' }}>系统将调用谨世专用 AI 为您生成薪酬分析报告</Typography>
+            <Typography variant="body2" sx={{ color: 'text.disabled' }}>岗位薪资大数据库版本 {dbVersion}</Typography>
           </Box>
         )}
       </Container>
 
       <Box component="footer" sx={{ textAlign: 'center', py: 3, mt: 6, borderTop: '1px solid rgba(0,0,0,0.05)' }}>
         <Typography variant="caption" sx={{ color: '#94a3b8', fontStyle: 'italic', display: 'block', mb: 0.5 }}>
-          本数据由谨世智能大数据库综合分析生成，最新更新于 {(() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; })()}
+          岗位薪资大数据库版本 {dbVersion}
         </Typography>
         <Typography variant="caption" sx={{ color: '#94a3b8' }}>2026岗位薪资查询平台  ·  数据由谨世智能大数据实验室提供  ·  仅供参考</Typography>
       </Box>

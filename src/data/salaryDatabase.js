@@ -45,14 +45,13 @@ const companyMultiplier = {
 // T序列(T1-T9): 技术专家序列
 const rankMultiplier = {
   // 技术序列 P1-P9
-  'P1': { mult: 0.30, label: 'P1(应届/实习)', category: 'tech' },
-  'P2': { mult: 0.45, label: 'P2(初级助理)', category: 'tech' },
-  'P3': { mult: 0.60, label: 'P3(初级)', category: 'tech' },
-  'P4': { mult: 0.78, label: 'P4(初中级)', category: 'tech' },
-  'P5': { mult: 1.00, label: 'P5(高级/独立负责)', category: 'tech' },
-  'P6': { mult: 1.30, label: 'P6(资深/团队核心)', category: 'tech' },
-  'P7': { mult: 1.65, label: 'P7(专家/模块负责人)', category: 'tech' },
-  'P7-1': { mult: 1.85, label: 'P7-1(高级专家)', category: 'tech' },
+  'P1': { mult: 0.40, label: 'P1(文员/助理)', category: 'tech' },
+  'P2': { mult: 0.55, label: 'P2(初级专员/技术员)', category: 'tech' },
+  'P3': { mult: 0.78, label: 'P3(中级)', category: 'tech' },
+  'P4': { mult: 1.00, label: 'P4(高级/独立负责)', category: 'tech' },
+  'P5': { mult: 1.30, label: 'P5(资深/团队核心)', category: 'tech' },
+  'P6': { mult: 1.65, label: 'P6(专家/模块负责人)', category: 'tech' },
+  'P7': { mult: 1.85, label: 'P7(高级专家)', category: 'tech' },
   'P8': { mult: 2.10, label: 'P8(高级专家/领域负责人)', category: 'tech' },
   'P9': { mult: 2.80, label: 'P9(首席/行业权威)', category: 'tech' },
   // 管理序列 M1-M5
@@ -110,14 +109,13 @@ const growthRates = {
 
 // ── 晋升路径 ──
 const promotionPaths = {
-  'P1': 'P2 → P3 → P4 → P5(高级)',
-  'P2': 'P3 → P4 → P5(高级) → P6(资深)',
-  'P3': 'P4 → P5(高级) → P6(资深) → P7(专家)',
-  'P4': 'P5(高级) → P6(资深) → P7(专家) → P8(高级专家)',
-  'P5': 'P6(资深) → P7(专家) → P8(高级专家) → P9(首席)',
-  'P6': 'P7(专家) → P8(高级专家) → P9(首席)',
-  'P7': 'P8(高级专家) → P9(首席)',
-  'P7-1': 'P8(高级专家) → P9(首席)',
+  'P1': 'P2(初级专员) → P3(中级) → P4(高级)',
+  'P2': 'P3(中级) → P4(高级) → P5(资深)',
+  'P3': 'P4(高级) → P5(资深) → P6(专家)',
+  'P4': 'P5(资深) → P6(专家) → P7(高级专家)',
+  'P5': 'P6(专家) → P7(高级专家) → P8(领域负责人)',
+  'P6': 'P7(高级专家) → P8(领域负责人) → P9(首席)',
+  'P7': 'P8(领域负责人) → P9(首席)',
   'P8': 'P9(首席)',
   'P9': '行业权威 / CTO方向',
   'M1': 'M2(经理) → M3(高级经理) → M4(总监) → M5(VP)',
