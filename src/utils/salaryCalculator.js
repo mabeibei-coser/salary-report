@@ -78,6 +78,29 @@ export function getSalaryColor(monthly) {
  * @param {number} monthly - 月薪
  * @returns {string}
  */
+/**
+ * admin-hub 同款：返回 {text, tone} 给 status-pill 用
+ * tone 与 .status-pill[data-tone=*] 对齐
+ */
+export function getComparisonStyle(diffPct) {
+  if (diffPct > 20) return { text: '显著高于市场平均水平', tone: 'positive' };
+  if (diffPct > 5) return { text: '高于市场平均水平', tone: 'positive' };
+  if (diffPct > -5) return { text: '与市场平均水平持平', tone: 'neutral' };
+  if (diffPct > -20) return { text: '低于市场平均水平', tone: 'warning' };
+  return { text: '显著低于市场平均水平', tone: 'danger' };
+}
+
+/**
+ * 判断是否高级岗位（P6 及以上 / M3 及以上）—— 决定是否展示股权字段
+ */
+export function isSeniorRank(rank) {
+  if (!rank) return false;
+  const num = parseInt(String(rank).replace(/[^0-9]/g, ''), 10) || 0;
+  if (String(rank).startsWith('P')) return num >= 6;
+  if (String(rank).startsWith('M')) return num >= 3;
+  return false;
+}
+
 export function generateSummary(position, company, diffPct, monthly) {
   const direction = diffPct >= 0 ? '高于' : '低于';
   const absPct = Math.abs(diffPct);

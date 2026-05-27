@@ -62,3 +62,99 @@ body { background-image: none; }
   background-color: rgba(255, 255, 255, 0.98) !important;
   backdrop-filter: blur(20px) !important;
 }
+
+/* ============================================
+   admin-hub salary 报告同款样式
+   来源：admin-hub/app/globals.css + components/report/salary/*.tsx
+   保持 100% 视觉一致；CSS vars 完全照搬（含 admin-hub 那边未定义的 --cyan-800 / --font-heading-serif，降级行为也一致）
+   ============================================ */
+
+:root {
+  /* navy（主色） */
+  --navy-800: oklch(0.26 0.07 250);
+  --navy-900: oklch(0.2 0.06 252);
+  --navy-950: oklch(0.16 0.04 255);
+  /* blue */
+  --blue-50: oklch(0.975 0.012 238);
+  --blue-200: oklch(0.87 0.07 238);
+  --blue-700: oklch(0.5 0.2 252);
+  /* cyan（salary 专属 accent） */
+  --cyan-50: oklch(0.98 0.012 200);
+  --cyan-100: oklch(0.95 0.03 200);
+  --cyan-200: oklch(0.88 0.07 200);
+  --cyan-500: oklch(0.66 0.13 200);
+  --cyan-600: oklch(0.58 0.13 200);
+  --cyan-700: oklch(0.5 0.13 200);
+  /* report tokens */
+  --report-ink-soft: oklch(0.32 0.05 250);
+  --report-ink-muted: oklch(0.5 0.02 250);
+  --report-border: oklch(0.91 0.01 240);
+  /* 通用 border（HeaderSection 用到） */
+  --border: oklch(0.918 0.008 240);
+  /* semantic */
+  --semantic-success: oklch(0.55 0.15 155);
+  --semantic-danger: oklch(0.55 0.2 25);
+}
+
+.report-card {
+  background: #fff;
+  border: 1px solid var(--report-border);
+  border-radius: 16px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03), 0 2px 8px rgba(15, 23, 42, 0.03);
+}
+
+.report-card:hover {
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 6px 20px rgba(15, 23, 42, 0.04);
+}
+
+.report-takeaway {
+  border-left: 3px solid var(--blue-500, oklch(0.63 0.18 248));
+  padding: 10px 14px;
+  background: var(--blue-50);
+  border-radius: 0 8px 8px 0;
+  color: var(--navy-800);
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 500;
+  border-radius: 9999px;
+  line-height: 1.4;
+  font-variant-numeric: tabular-nums;
+}
+.status-pill[data-tone="info"] {
+  background: oklch(0.96 0.03 252);
+  color: var(--blue-700);
+  box-shadow: inset 0 0 0 1px oklch(0.85 0.07 252 / 0.5);
+}
+.status-pill[data-tone="success"],
+.status-pill[data-tone="positive"] {
+  background: oklch(0.96 0.04 155);
+  color: oklch(0.35 0.12 155);
+  box-shadow: inset 0 0 0 1px oklch(0.82 0.1 155 / 0.5);
+}
+.status-pill[data-tone="warning"] {
+  background: oklch(0.97 0.06 70);
+  color: oklch(0.4 0.12 55);
+  box-shadow: inset 0 0 0 1px oklch(0.84 0.12 65 / 0.55);
+}
+.status-pill[data-tone="neutral"] {
+  background: oklch(0.96 0.005 240);
+  color: oklch(0.42 0.02 250);
+  box-shadow: inset 0 0 0 1px oklch(0.9 0.008 240);
+}
+.status-pill[data-tone="danger"] {
+  background: oklch(0.97 0.04 25);
+  color: oklch(0.45 0.18 25);
+  box-shadow: inset 0 0 0 1px oklch(0.85 0.1 25 / 0.5);
+}
+
+/* Tailwind preflight 被关掉了，h2 默认浏览器样式会盖掉 font-bold —— 这里强制 section title 的字号字重 */
+.report-card h2 { margin: 0; font-weight: inherit; }
+
