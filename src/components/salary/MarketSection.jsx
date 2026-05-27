@@ -56,10 +56,13 @@ export default function MarketSection({ data, index, total }) {
           )}
         </div>
 
-        {/* 右侧：近 5 年薪酬趋势 */}
-        <div className="md:col-span-7">
+        {/* 右侧：近 5 年薪酬趋势（与左侧框同款样式 + grid stretch 自动齐平） */}
+        <div
+          className="md:col-span-7 rounded-lg p-4 flex flex-col"
+          style={{ border: '1px solid var(--report-border)', background: 'oklch(0.985 0.006 240)' }}
+        >
           <div className="flex items-center justify-between mb-2">
-            <div className="text-[11.5px] font-medium" style={{ color: 'var(--report-ink-muted)' }}>
+            <div className="text-[12px] font-semibold" style={{ color: 'var(--cyan-700)' }}>
               该岗位近 5 年薪酬水平
             </div>
             {trendPoints.length >= 2 && (
@@ -80,7 +83,7 @@ export default function MarketSection({ data, index, total }) {
           </div>
 
           {trendPoints.length >= 2 ? (
-            <div className="rounded-lg bg-white p-1.5" style={{ border: '1px solid var(--report-border)' }}>
+            <div className="rounded-md bg-white p-2 flex-1 flex items-center">
               <svg viewBox={`0 0 ${VBW} ${VBH}`} className="w-full h-auto block">
                 <defs>
                   <linearGradient id="salaryTrendArea" x1="0" y1="0" x2="0" y2="1">
@@ -153,7 +156,7 @@ export default function MarketSection({ data, index, total }) {
             </div>
           ) : (
             <div
-              className="rounded-lg px-3 py-6 text-center text-[12px]"
+              className="rounded-md px-3 py-6 text-center text-[12px] flex-1 flex items-center justify-center"
               style={{ border: '1px dashed var(--report-border)', color: 'var(--report-ink-muted)' }}
             >
               暂无近 5 年趋势数据
