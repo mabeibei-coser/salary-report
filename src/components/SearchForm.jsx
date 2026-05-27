@@ -45,7 +45,7 @@ export default function SearchForm({ onSearch, loading = false }) {
       className="glass-card"
       sx={{
         p: { xs: 2.5, md: 3 },
-        mb: 4,
+        mb: 2,
         display: 'flex',
         flexDirection: { xs: 'column', md: 'row' },
         gap: 2,

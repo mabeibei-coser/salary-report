@@ -141,7 +141,7 @@ export default function App() {
         </Box>
 
         {/* 标题区 */}
-        <Box sx={{ textAlign: 'center', mb: { xs: 3, md: 4 } }}>
+        <Box sx={{ textAlign: 'center', mb: { xs: 1.5, md: 2 } }}>
           <Box sx={{ display: 'inline-flex', alignItems: 'flex-start', gap: 1 }}>
             <Typography
               variant="h3"
@@ -157,7 +157,7 @@ export default function App() {
               专业版
             </Box>
           </Box>
-          <Box sx={{ width: 40, height: 3, backgroundColor: '#2563eb', mx: 'auto', mt: 1.5, mb: 1.5, borderRadius: 2 }} />
+          <Box sx={{ width: 40, height: 3, backgroundColor: '#2563eb', mx: 'auto', mt: 0.75, mb: 0.75, borderRadius: 2 }} />
           <Typography variant="body2" sx={{ color: '#64748b', fontSize: { xs: '0.75rem', md: '0.875rem' }, letterSpacing: { xs: 1, md: 2 }, whiteSpace: 'nowrap' }}>
             岗位薪资查询  ·  行业城市分析  ·  高薪人群分析
           </Typography>
