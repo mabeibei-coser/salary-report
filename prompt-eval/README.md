@@ -15,12 +15,12 @@
 npm run eval:prompt
 ```
 
-第一次会自动下载 promptfoo（~50MB），后续走缓存。
+promptfoo 不进 `package.json`（避免污染生产 lockfile），`eval:prompt` 直接走 `npx -y promptfoo@0.120.27`。第一次会下载到 npx 缓存（`~/.npm/_npx/`，~50MB），后续走缓存秒起。`.env.local` 通过 `--env-file` 直接传给 promptfoo，不再依赖 `dotenv-cli`。
 
 跑完看 web UI（带颜色对比）：
 
 ```powershell
-npx promptfoo view
+npx -y promptfoo@0.120.27 view
 ```
 
 浏览器自动打开 `http://localhost:15500`，可以看到每个用例的输入、输出、哪条 assertion pass/fail。
@@ -67,7 +67,7 @@ prompt-eval/
 ## 常见问题
 
 **Q: 报错 "API key not configured" 或 401**
-A: `npm run eval:prompt` 用 dotenv-cli 加载 `.env.local`，确认 .env.local 里有 `IFLYTEK_API_KEY=xxx`。注意 promptfoo 的 OpenAI SDK provider 调讯飞会返回 401（讯飞不认 OpenAI-specific headers），所以这里用 `http` provider + `transformResponse` 直接发原生 fetch 请求。
+A: `npm run eval:prompt` 通过 promptfoo 的 `--env-file .env.local` 加载环境变量，确认 .env.local 里有 `IFLYTEK_API_KEY=xxx`。注意 promptfoo 的 OpenAI SDK provider 调讯飞会返回 401（讯飞不认 OpenAI-specific headers），所以这里用 `http` provider + `transformResponse` 直接发原生 fetch 请求。
 
 **Q: 报错 "json: cannot unmarshal string into ... messages"**
 A: promptfoo 的 `{{prompt}}` 在 chat-format 时是 JSON string，body 模板里要用 `{{ prompt | safe }}`（不加 dump，加 safe），让它原样嵌入 JSON 而不被二次序列化或 HTML escape。
@@ -81,7 +81,7 @@ A: 5 个用例 × 6KB 输出 ≈ 1-2 分钟，正常。讯飞速度慢一点。
 **Q: 想跑单个用例**
 A: 用 promptfoo 的 `--filter-pattern` 参数：
 ```powershell
-npx promptfoo eval -c promptfooconfig.yaml --filter-pattern "外资"
+npx -y promptfoo@0.120.27 eval -c prompt-eval/promptfooconfig.yaml --env-file .env.local --filter-pattern "外资"
 ```
 
 **Q: 跟 server.js 的实际报告对得上吗？**

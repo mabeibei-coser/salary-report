@@ -10,7 +10,7 @@
     "build": "vite build",
     "start": "NODE_ENV=production node server.js",
     "preview": "vite preview",
-    "eval:prompt": "dotenv -e .env.local -- promptfoo eval -c prompt-eval/promptfooconfig.yaml"
+    "eval:prompt": "npx -y promptfoo@0.120.27 eval -c prompt-eval/promptfooconfig.yaml --env-file .env.local"
   },
   "dependencies": {
     "@emotion/react": "^11.11.1",
@@ -31,9 +31,7 @@
     "@vitejs/plugin-react": "^4.2.0",
     "autoprefixer": "^10.4.16",
     "concurrently": "^9.0.1",
-    "dotenv-cli": "^11.0.0",
     "postcss": "^8.4.31",
-    "promptfoo": "0.120.27",
     "tailwindcss": "^3.3.5",
     "vite": "^5.0.0"
   }
