@@ -15,6 +15,20 @@ export default function App() {
   const [report, setReport] = useState(null);
   const [hasSearched, setHasSearched] = useState(false);
   const [queryParams, setQueryParams] = useState({ position: '', company: '', rank: '', education: '', city: '' });
+  const [countdown, setCountdown] = useState(20);
+
+  // loading 期间倒计时 20s → 0s，loading 结束自动复位
+  useEffect(() => {
+    if (!loading) {
+      setCountdown(20);
+      return;
+    }
+    setCountdown(20);
+    const timer = setInterval(() => {
+      setCountdown((prev) => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [loading]);
 
   useEffect(() => {
     let cancelled = false;
@@ -131,7 +145,7 @@ export default function App() {
           }}
         >
           <Typography variant="caption" sx={{ color: '#64748b', fontSize: { xs: '0.7rem', md: '0.75rem' } }}>
-            {me.phone}
+            {me.phone ? `${me.phone.slice(0, 3)}******${me.phone.slice(-2)}` : ''}
           </Typography>
           <Tooltip title="退出登录">
             <IconButton size="small" onClick={handleLogout} sx={{ color: '#94a3b8', p: 0.5 }}>
@@ -170,6 +184,9 @@ export default function App() {
             <CircularProgress size={40} sx={{ color: '#1e3a5f', mb: 2 }} />
             <Typography variant="subtitle1" sx={{ color: 'text.secondary', mb: 1 }}>正在分析薪酬数据...</Typography>
             <Typography variant="body2" sx={{ color: 'text.disabled' }}>AI 正在为您生成专业的薪酬分析报告，请稍候</Typography>
+            <Typography variant="caption" sx={{ display: 'block', color: 'text.disabled', mt: 2, fontVariantNumeric: 'tabular-nums' }}>
+              {countdown > 0 ? `预计 20 秒完成 · 还剩 ${countdown} 秒` : '预计 20 秒完成 · 仍在生成…'}
+            </Typography>
           </Box>
         )}
 
