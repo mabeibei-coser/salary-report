@@ -215,6 +215,7 @@ const SYSTEM_PROMPT = `你是一位资深的中国薪酬数据分析专家。你
   "rankCategory": "tech或mgmt",
   "education": "学历",
   "city": "城市",
+  "rankLadder": [{"rank": "职级代码", "rankLabel": "职级标签", "category": "tech或mgmt", "monthly": 月薪p50, "annual": 年薪p50}],
   "monthly": {"p25": 月薪, "p50": 月薪, "p75": 月薪},
   "annual": {"p25": 年薪, "p50": 年薪, "p75": 年薪},
   "bonusMonths": {"p25": 月数, "p50": 月数, "p75": 月数},
@@ -228,12 +229,59 @@ const SYSTEM_PROMPT = `你是一位资深的中国薪酬数据分析专家。你
   "highEarnerTraits": "该岗位较高薪资人群的特点描述，200字以内"
 }
 
+## 生成工作流（必须严格按此顺序执行，不可跳步）
+
+### 第一步：先生成 rankLadder 全职级薪酬锚定表
+
+仅基于【岗位 + 最高学历 + 企业性质 + 所在城市】四个参数（**暂不考虑用户选择的职级**），按下方"职级具体化描述"，推理出该岗位在该企业性质 + 该学历 + 该城市层级下，从 P1 到 P9、M1 到 M5 共 14 个职级各自的月薪中位数（p50）与年薪中位数（p50）。
+
+填入 JSON 的 rankLadder 字段，要求：
+- **必须 14 条**，顺序固定：P1, P2, P3, P4, P5, P6, P7, P8, P9, M1, M2, M3, M4, M5
+- rank 字段填职级代码（如"P5"），rankLabel 填该职级的完整标签（如"P5(资深/工程师)"），category 填 "tech"（P 序列）或 "mgmt"（M 序列）
+- monthly、annual 都是正整数，单位元，精确到百元
+- **P1→P9 严格单调递增**；**M1→M5 严格单调递增**
+- 管理岗略高于同档 P 序列：M1≈P4×1.08-1.15、M2≈P5×1.05-1.12、M3≈P6×1.0-1.10、M4≈P7×1.10-1.20、M5≈P8×1.10-1.20
+- 整张表的薪酬基准已经把"岗位 + 企业性质系数 + 学历加成 + 城市层级"全部计算进去；后续第二步不再重复套这些系数
+
+### 第二步：从 rankLadder 摘取用户选择的职级数据
+
+从第一步生成的 rankLadder 中找到用户选择的职级，取出其 monthly 作为本报告的 monthly.p50、annual 作为 annual.p50。**monthly.p50 必须严格等于 rankLadder 对应行的 monthly；annual.p50 必须严格等于 rankLadder 对应行的 annual**（保证报告与锚定表自洽）。
+
+再按 spread = 18%-32%（视行业波动幅度）反推：
+- monthly.p25 = round(monthly.p50 × (1 - spread × 0.45) / 100) × 100
+- monthly.p75 = round(monthly.p50 × (1 + spread × 0.45) / 100) × 100
+- annual.p25、annual.p75 同理（也可由对应 monthly × (12 + bonusMonths) 推导，保持自洽）
+
+### 第三步：展开其余字段
+
+基于第二步的 monthly/annual，按下方"核心规则"展开 bonusMonths、equity、housingFund、hourlyRate、marketComparison、salaryTrend、industryAnalysis、cityAnalysis、highEarnerTraits。
+
+## 职级具体化描述（用于第一步全表推理 + 第二步精准匹配）
+
+### 技术/专业序列（P1-P9）
+- **P1（文员/助理）**：0-1 年经验；执行事务性、流程化的具体动作；完全在上级指导下工作；典型产出：数据录入、文档整理、跑流程辅助。
+- **P2（初级专员/技术员）**：1-3 年；做标准化、可重复的具体任务；遇到非标问题需上级介入；典型产出：完成单个小功能/小模块、按 checklist 执行。
+- **P3（中级）**：3-5 年；独立完成中等复杂度任务、需偶尔指导；开始参与方案讨论；典型产出：独立交付小项目、可 review 初级同学产出。
+- **P4（高级专员/技术员，行业基准位）**：5-8 年；独立负责一个完整功能/子系统，主动做方案选型；可带 1-2 名初级；典型产出：完整子模块设计与交付、能写技术设计文档。
+- **P5（资深/工程师）**：7-10 年；独立攻坚复杂技术问题，跨模块整合能力；非正式 tech lead，影响 3-5 人小组；典型产出：主导核心系统设计与落地、能拆解模糊需求为可执行方案。
+- **P6（专家/独立负责）**：8-12 年；独立负责一个完整业务方向或核心系统；跨团队协作；典型产出：主导一条业务线技术或一个核心平台，结果对业务指标负责。
+- **P7（高级专家/模块负责人）**：10-15 年；负责一个大模块/技术栈，对该领域有公司级影响力；带 5-15 人虚拟团队；典型产出：定义技术战略、主导大型重构、跨团队治理。
+- **P8（资深专家/领域负责人）**：13 年以上；负责一个完整技术领域或多条业务线的技术决策；公司级技术权威；典型产出：制定公司级技术架构，技术决策影响 100+ 工程师。
+- **P9（首席/行业权威）**：15 年以上；公司技术战略制定者，业界知名；典型产出：制定 5-10 年技术路线、对外代表公司技术品牌。
+
+### 管理序列（M1-M5）
+- **M1（团队主管）**：5 年以上；管理 3-8 人执行型小组；本人同时承担 30-50% 个人产出；典型产出：带小组完成季度 OKR、做 1on1 与绩效。
+- **M2（经理）**：7 年以上；管理 8-20 人，下设 1-2 个 M1 或资深骨干；基本不再做个人执行产出；典型产出：完成部门 OKR、负责团队招聘培养。
+- **M3（高级经理）**：10 年以上；管理 20-50 人或多个 M2 团队；参与公司中层决策；典型产出：完成一条业务方向的年度目标、组织建设。
+- **M4（总监）**：12 年以上；管理 50-200 人或多条业务线；进入公司核心决策圈；典型产出：完成公司战略级目标、组织架构设计。
+- **M5（副总裁）**：15 年以上；管理事业部 200 人以上，向 CEO 汇报；典型产出：完成事业部 P&L、董事会汇报。
+
 ## 核心规则
 
-### 1. 五维参数都必须影响数据
+### 1. 五维参数都必须影响数据（在第一步全表推理时统一计入，第二步不重复套）
 - **岗位名称**：决定薪酬基准。技术岗（开发/算法/架构）高于职能岗（行政/人事），管理岗高于执行岗
 - **企业性质**：外资企业薪酬最高（系数约1.10），合资次之（1.05），国有企业福利好、公积金比例高但薪酬较低（0.85）。民营企业居中，初创公司波动大
-- **职级**：P序列1-9逐级递增，P4为高级专员/技术员（基准位），P5为资深/工程师，P7为高级专家/模块负责人，P8为资深专家/领域负责人，P9为首席。M1-M5管理序列薪酬高于同级别P序列
+- **职级**：按上面"职级具体化描述"精确匹配；管理序列同档薪酬高于 P 序列
 - **最高学历**：博士>硕士>MBA>本科>大专>高中。硕士比本科高约15-20%，博士比硕士高约15-20%。MBA在管理岗有额外加成
 - **所在城市**：用户选择城市层级，需根据层级自动生成该层级的典型城市数据。一线城市（北上广深）薪酬为基准100%，二线城市（杭州/成都/武汉/南京/苏州/西安等）约为一线80-85%，三四线城市约为一线50-70%
 
@@ -272,6 +320,25 @@ function buildUserMessage({ position, company, rank, education, city }) {
 请严格按系统提示的JSON格式返回完整数据，确保所有五项参数都体现在薪酬数据中。`;
 }
 
+// 14 个标准职级 + 相对 P4(=1.00) 的系数（与 src/data/salaryDatabase.js 的 rankMultiplier 对齐，
+// 用于 AI 漏返/返错 rankLadder 时的兜底回填）
+const STANDARD_RANK_LADDER = [
+  { rank: "P1", rankLabel: "P1(文员/助理)", category: "tech", mult: 0.40 },
+  { rank: "P2", rankLabel: "P2(初级专员/技术员)", category: "tech", mult: 0.55 },
+  { rank: "P3", rankLabel: "P3(中级)", category: "tech", mult: 0.78 },
+  { rank: "P4", rankLabel: "P4(高级专员/技术员)", category: "tech", mult: 1.00 },
+  { rank: "P5", rankLabel: "P5(资深/工程师)", category: "tech", mult: 1.30 },
+  { rank: "P6", rankLabel: "P6(专家/独立负责)", category: "tech", mult: 1.65 },
+  { rank: "P7", rankLabel: "P7(高级专家/模块负责人)", category: "tech", mult: 1.85 },
+  { rank: "P8", rankLabel: "P8(资深专家/领域负责人)", category: "tech", mult: 2.10 },
+  { rank: "P9", rankLabel: "P9(首席/行业权威)", category: "tech", mult: 2.80 },
+  { rank: "M1", rankLabel: "M1(团队主管)", category: "mgmt", mult: 1.10 },
+  { rank: "M2", rankLabel: "M2(经理)", category: "mgmt", mult: 1.45 },
+  { rank: "M3", rankLabel: "M3(高级经理)", category: "mgmt", mult: 1.85 },
+  { rank: "M4", rankLabel: "M4(总监)", category: "mgmt", mult: 2.40 },
+  { rank: "M5", rankLabel: "M5(副总裁)", category: "mgmt", mult: 3.10 },
+];
+
 function validateAndNormalize(data, params) {
   data.position = data.position || params.position;
   data.company = data.company || params.company;
@@ -285,6 +352,93 @@ function validateAndNormalize(data, params) {
     data[key] = data[key] || {};
     for (const p of ["p25", "p50", "p75"]) {
       data[key][p] = Math.round(Number(data[key]?.[p]) || 0);
+    }
+  }
+
+  // ── rankLadder 全职级薪酬锚定表兜底 ──
+  // 期望：14 条，顺序 P1-P9 + M1-M5，每条 { rank, rankLabel, category, monthly, annual }
+  // 失败兜底：基于本报告 monthly.p50 + 用户职级，反推该岗位的 P4 基准月薪，再按 STANDARD_RANK_LADDER 系数生成全表
+  const ladderInput = Array.isArray(data.rankLadder) ? data.rankLadder : [];
+  const ladderByRank = new Map();
+  for (const item of ladderInput) {
+    if (!item || typeof item !== "object") continue;
+    const rk = String(item.rank || "").trim().toUpperCase();
+    if (!rk) continue;
+    ladderByRank.set(rk, {
+      rank: rk,
+      rankLabel: item.rankLabel || rk,
+      category: item.category === "mgmt" ? "mgmt" : "tech",
+      monthly: Math.round(Number(item.monthly) || 0),
+      annual: Math.round(Number(item.annual) || 0),
+    });
+  }
+
+  const allLadderOk = STANDARD_RANK_LADDER.every((std) => {
+    const got = ladderByRank.get(std.rank);
+    return got && got.monthly > 0 && got.annual > 0;
+  });
+
+  if (!allLadderOk) {
+    // 用户选择的职级在标准表里的系数，结合 monthly.p50 推导 P4 基准
+    const userRankStd = STANDARD_RANK_LADDER.find((s) => s.rank === data.rank);
+    const p50 = data.monthly.p50 || 0;
+    const baseP4 = userRankStd && p50 > 0 ? p50 / userRankStd.mult : p50 || 18000;
+    // 年终奖月数（用于 annual = monthly × (12 + bonus)），缺失时按 2 个月兜底
+    const bonusForAnnual = Number(data.bonusMonths?.p50) > 0 ? Number(data.bonusMonths.p50) : 2;
+    data.rankLadder = STANDARD_RANK_LADDER.map((std) => {
+      const monthly = Math.round(baseP4 * std.mult / 100) * 100;
+      const annual = Math.round(monthly * (12 + bonusForAnnual) / 100) * 100;
+      return {
+        rank: std.rank,
+        rankLabel: std.rankLabel,
+        category: std.category,
+        monthly,
+        annual,
+      };
+    });
+  } else {
+    // AI 给齐了 14 条，但顺序可能错乱 → 按 STANDARD_RANK_LADDER 顺序重排，并补齐缺失的 rankLabel/category
+    data.rankLadder = STANDARD_RANK_LADDER.map((std) => {
+      const got = ladderByRank.get(std.rank);
+      return {
+        rank: std.rank,
+        rankLabel: got.rankLabel || std.rankLabel,
+        category: got.category || std.category,
+        monthly: got.monthly,
+        annual: got.annual,
+      };
+    });
+    // 单调性校正：P1-P9 必须递增，M1-M5 必须递增
+    const pSeries = data.rankLadder.filter((r) => r.category === "tech");
+    const mSeries = data.rankLadder.filter((r) => r.category === "mgmt");
+    for (const series of [pSeries, mSeries]) {
+      for (let i = 1; i < series.length; i++) {
+        if (series[i].monthly <= series[i - 1].monthly) {
+          series[i].monthly = Math.round(series[i - 1].monthly * 1.05 / 100) * 100;
+          const bonus = Number(data.bonusMonths?.p50) > 0 ? Number(data.bonusMonths.p50) : 2;
+          series[i].annual = Math.round(series[i].monthly * (12 + bonus) / 100) * 100;
+        }
+      }
+    }
+  }
+
+  // ── 摘取自洽：monthly.p50 / annual.p50 必须等于 rankLadder 中对应职级的 monthly/annual ──
+  const ladderRow = data.rankLadder.find((r) => r.rank === data.rank);
+  if (ladderRow) {
+    if (ladderRow.monthly > 0) data.monthly.p50 = ladderRow.monthly;
+    if (ladderRow.annual > 0) data.annual.p50 = ladderRow.annual;
+    // p25/p75 若错乱（≤0 或顺序倒置），按 ±13% 重算（落在 prompt 要求的 spread 中段）
+    if (!(data.monthly.p25 > 0 && data.monthly.p25 < data.monthly.p50)) {
+      data.monthly.p25 = Math.round(data.monthly.p50 * 0.87 / 100) * 100;
+    }
+    if (!(data.monthly.p75 > data.monthly.p50)) {
+      data.monthly.p75 = Math.round(data.monthly.p50 * 1.13 / 100) * 100;
+    }
+    if (!(data.annual.p25 > 0 && data.annual.p25 < data.annual.p50)) {
+      data.annual.p25 = Math.round(data.annual.p50 * 0.87 / 100) * 100;
+    }
+    if (!(data.annual.p75 > data.annual.p50)) {
+      data.annual.p75 = Math.round(data.annual.p50 * 1.13 / 100) * 100;
     }
   }
 

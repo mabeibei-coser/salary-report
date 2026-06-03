@@ -3,3 +3,9 @@ dist
 .env.local
 .env*.local
 data/
+
+# promptfoo 跑出来的本地结果和缓存
+# promptfooconfig 里 outputPath: ./results.json 落在项目根，不是 prompt-eval/ 里
+/results.json
+prompt-eval/output/
+.promptfoo/

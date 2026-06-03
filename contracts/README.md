@@ -4,7 +4,7 @@
 
 ## 谁在用
 
-- `D:\_workspace\01_项目-Coding\admin-hub` 通过 `npm run sync-salary` 拉取这里的 `salary-report.ts`，覆盖到自己的 `lib/types-salary.ts`
+- `D:\_workspace\01_项目-Coding\B100-管理后台-admin-hub` 通过 `npm run sync-salary` 拉取这里的 `salary-report.ts`，覆盖到自己的 `lib/types-salary.ts`
 
 ## 改字段的流程
 

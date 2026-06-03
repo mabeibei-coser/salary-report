@@ -1,0 +1,205 @@
+# promptfoo 配置：薪资报告 system prompt 调优
+# 跑: npm run eval:prompt
+# 详见 prompt-eval/README.md
+
+description: "薪资报告 system prompt 调优"
+
+prompts:
+  - file://prompts/salary-system-v1.yaml
+  # 想对比新版本时，把下一行解开注释，跑出来 promptfoo 会并排比较
+  # - file://prompts/salary-system-v2.yaml
+
+# 讯飞 MaaS 用 OpenAI 兼容协议，但 promptfoo 的 openai SDK 会发额外 header
+# 导致讯飞回 401。这里用 http provider 完全照搬 server.js 的原生 fetch
+providers:
+  - id: https://maas-coding-api.cn-huabei-1.xf-yun.com/v2/chat/completions
+    config:
+      method: POST
+      headers:
+        Content-Type: application/json
+        Authorization: "Bearer {{ env.IFLYTEK_API_KEY }}"
+      # body 必须是字段（promptfoo 强制要求）。raw 字符串模板：
+      # promptfoo 把 chat-format prompt 序列化成 JSON 字符串后存入 {{prompt}}
+      # safe filter 防止 nunjucks 把已是 JSON 的内容做 HTML escape
+      body: '{"model":"astron-code-latest","messages":{{ prompt | safe }},"temperature":0.3,"max_tokens":6144}'
+      transformResponse: "json.choices[0].message.content"
+
+# ─────────────────────────────────────────────────────────────
+# defaultTest.assert：所有测试用例都会自动跑这 6 条通用断言
+# 每个具体 test 里的 assert 是「追加」，不是覆盖
+# ─────────────────────────────────────────────────────────────
+defaultTest:
+  assert:
+    - type: is-json
+
+    # 1. 结构完整性：16 个顶层字段都在
+    - type: javascript
+      value: |
+        const r = JSON.parse(output);
+        const required = ['position','company','rank','education','city',
+                          'monthly','annual','bonusMonths','equity','housingFund',
+                          'hourlyRate','marketComparison','salaryTrend',
+                          'industryAnalysis','cityAnalysis','highEarnerTraits'];
+        const missing = required.filter(k => !(k in r));
+        return missing.length === 0
+          ? true
+          : `缺字段: ${missing.join(', ')}`;
+
+    # 2. salaryTrend 必须 5 个点 + 严格单调递增（prompt 规则 #3）
+    - type: javascript
+      value: |
+        const r = JSON.parse(output);
+        if (!Array.isArray(r.salaryTrend) || r.salaryTrend.length !== 5)
+          return `salaryTrend 应有 5 个点, 实际 ${r.salaryTrend?.length}`;
+        for (let i = 1; i < 5; i++) {
+          if (r.salaryTrend[i].monthly <= r.salaryTrend[i-1].monthly)
+            return `salaryTrend 第${i+1}年(${r.salaryTrend[i].monthly}) <= 第${i}年(${r.salaryTrend[i-1].monthly}), 违反单调递增`;
+        }
+        return true;
+
+    # 3. industryAnalysis 必须 15 个（prompt 规则 #4）
+    - type: javascript
+      value: |
+        const r = JSON.parse(output);
+        return Array.isArray(r.industryAnalysis) && r.industryAnalysis.length === 15
+          ? true
+          : `industryAnalysis 应有 15 个, 实际 ${r.industryAnalysis?.length}`;
+
+    # 4. cityAnalysis 必须 6 个（prompt 规则 #5）
+    - type: javascript
+      value: |
+        const r = JSON.parse(output);
+        return Array.isArray(r.cityAnalysis) && r.cityAnalysis.length === 6
+          ? true
+          : `cityAnalysis 应有 6 个, 实际 ${r.cityAnalysis?.length}`;
+
+    # 5. 分位数顺序：p25 < p50 < p75（数据合理性）
+    - type: javascript
+      value: |
+        const r = JSON.parse(output);
+        const checks = [
+          ['monthly', r.monthly],
+          ['annual',  r.annual],
+          ['hourlyRate', r.hourlyRate],
+        ];
+        for (const [name, obj] of checks) {
+          if (!(obj.p25 < obj.p50 && obj.p50 < obj.p75))
+            return `${name} 分位数顺序错: p25=${obj.p25}, p50=${obj.p50}, p75=${obj.p75}`;
+        }
+        return true;
+
+    # ─── 逻辑一致性（核心）：报告内部字段之间必须自洽 ───
+
+    # 6. annual = monthly × (12 + bonusMonths)（prompt 规则 #2 明确）
+    - type: javascript
+      value: |
+        const r = JSON.parse(output);
+        const issues = [];
+        for (const p of ['p25','p50','p75']) {
+          const expected = r.monthly[p] * (12 + r.bonusMonths[p]);
+          const actual = r.annual[p];
+          if (Math.abs(actual - expected) / expected > 0.01)
+            issues.push(`${p}: annual ${actual} ≠ monthly ${r.monthly[p]} × (12+${r.bonusMonths[p]}) = ${Math.round(expected)} (差 ${((actual-expected)/expected*100).toFixed(1)}%)`);
+        }
+        return issues.length === 0 ? true : `annual ≠ monthly × (12+bonusMonths): ${issues.join('; ')}`;
+
+    # 7. salaryTrend 末年 = monthly.p50（prompt 规则 #3 明确写"2026 年的值需与本报告 monthly.p50 一致"）
+    - type: javascript
+      value: |
+        const r = JSON.parse(output);
+        const last = r.salaryTrend[r.salaryTrend.length - 1];
+        return last.monthly === r.monthly.p50
+          ? true
+          : `salaryTrend 末年(${last.year}=${last.monthly}) ≠ monthly.p50(${r.monthly.p50})`;
+
+    # 8. hourlyRate = monthly / (21.75 × 8)（prompt 规则 #2 明确）
+    - type: javascript
+      value: |
+        const r = JSON.parse(output);
+        const issues = [];
+        for (const p of ['p25','p50','p75']) {
+          const expected = r.monthly[p] / (21.75 * 8);
+          const actual = r.hourlyRate[p];
+          if (Math.abs(actual - expected) / expected > 0.05)
+            issues.push(`${p}: hourlyRate ${actual} ≠ monthly/${(21.75*8).toFixed(0)} = ${expected.toFixed(0)}`);
+        }
+        return issues.length === 0 ? true : `hourlyRate ≠ monthly / (21.75×8): ${issues.join('; ')}`;
+
+    # 9. industryAnalysis 每行 salaryIncrease 必须在 1.5%-5.5%（prompt 规则 #4 明确）
+    - type: javascript
+      value: |
+        const r = JSON.parse(output);
+        const bad = [];
+        for (const item of (r.industryAnalysis || [])) {
+          const v = parseFloat(String(item.salaryIncrease || '').replace('%',''));
+          if (isNaN(v) || v < 1.5 || v > 5.5)
+            bad.push(`${item.industry}=${item.salaryIncrease}`);
+        }
+        return bad.length === 0
+          ? true
+          : `salaryIncrease 越界 (应 1.5%-5.5%): ${bad.slice(0,5).join(', ')}${bad.length > 5 ? ` …等共 ${bad.length} 条`: ''}`;
+
+# ─────────────────────────────────────────────────────────────
+# tests：5 个典型场景。每个用例 = 通用 5 条 + 该用例特殊断言
+# ─────────────────────────────────────────────────────────────
+tests:
+  - description: "一线外资·硕士·P6 产品经理"
+    vars:
+      position: "产品经理"
+      company: "外资"
+      rank: "P6"
+      education: "硕士"
+      city: "上海"
+
+  - description: "三四线民营·本科·P4 会计"
+    vars:
+      position: "会计"
+      company: "民营"
+      rank: "P4"
+      education: "本科"
+      city: "长沙"
+
+  - description: "一线国企·博士·M3 研发总监（公积金应较高）"
+    vars:
+      position: "研发总监"
+      company: "国有"
+      rank: "M3"
+      education: "博士"
+      city: "北京"
+    assert:
+      # 国企公积金比例最高 12%+12%，按 p50 月薪估算应约 p50 * 0.24
+      # 给 20% 容差（部分企业可能不顶格）
+      - type: javascript
+        value: |
+          const r = JSON.parse(output);
+          const expected = r.monthly.p50 * 0.2;
+          const actual = r.housingFund.p50;
+          return actual >= expected * 0.8
+            ? true
+            : `国企公积金 ${actual} 偏低（按 12%+12% 应约 ${Math.round(expected)}）`;
+
+  - description: "二线外资·硕士·P5 算法工程师"
+    vars:
+      position: "算法工程师"
+      company: "外资"
+      rank: "P5"
+      education: "硕士"
+      city: "杭州"
+
+  - description: "一线初创·本科·P7 技术合伙人（股权应较高）"
+    vars:
+      position: "技术合伙人"
+      company: "初创"
+      rank: "P7"
+      education: "本科"
+      city: "深圳"
+    assert:
+      # 初创高职级应有股权（prompt 规则 #2 明确说"初创和外资股权较高"）
+      - type: javascript
+        value: |
+          const r = JSON.parse(output);
+          return r.equity.p50 > 0
+            ? true
+            : `初创 P7 股权为 0，违反"初创和外资股权较高"规则`;
+
+outputPath: ./results.json
