@@ -23,7 +23,43 @@ const IFLYTEK_MODEL =
 
 const app = express();
 app.set("trust proxy", true);
-app.use(express.json({ limit: "1mb" }));
+
+// 自实现 JSON body 解析，替代 express.json()。
+// 起因：线上 nginx → Express 链路上 application/json POST 一律返默认 HTML 400 "Bad Request"，
+// 而 form-urlencoded 正常；本地直连同样请求是 200/401。怀疑线上 body-parser 在某些
+// 环境下异常或 nginx 改 body。这里完全绕开 body-parser，自己读 raw body 再解析，
+// 解析失败时返 JSON 错误（含 receivedPreview）便于继续诊断，而非默认 HTML 400。
+app.use((req, res, next) => {
+  if (req.method === "GET" || req.method === "HEAD" || req.method === "DELETE") return next();
+  const ct = String(req.headers["content-type"] || "").toLowerCase();
+  if (!ct.includes("application/json")) return next();
+  const chunks = [];
+  let total = 0;
+  const MAX = 1024 * 1024; // 1MB
+  req.on("data", (c) => {
+    total += c.length;
+    if (total > MAX) {
+      req.destroy();
+      try { res.status(413).json({ error: "body 超过 1MB" }); } catch {}
+    } else chunks.push(c);
+  });
+  req.on("end", () => {
+    const raw = Buffer.concat(chunks).toString("utf8");
+    if (!raw) { req.body = {}; return next(); }
+    try {
+      req.body = JSON.parse(raw);
+      return next();
+    } catch (err) {
+      return res.status(400).json({
+        error: "JSON 解析失败",
+        detail: err.message,
+        receivedBytes: raw.length,
+        receivedPreview: raw.slice(0, 200),
+      });
+    }
+  });
+  req.on("error", next);
+});
 
 const PHONE_RE = /^1\d{10}$/;
 
