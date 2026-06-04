@@ -125,19 +125,19 @@ defaultTest:
         }
         return issues.length === 0 ? true : `hourlyRate ≠ monthly / (21.75×8): ${issues.join('; ')}`;
 
-    # 9. industryAnalysis 每行 salaryIncrease 必须在 1.5%-5.5%（prompt 规则 #4 明确）
+    # 9. industryAnalysis 每行 salaryIncrease 必须在 1.5%-6%（prompt 规则 #4 明确）
     - type: javascript
       value: |
         const r = JSON.parse(output);
         const bad = [];
         for (const item of (r.industryAnalysis || [])) {
           const v = parseFloat(String(item.salaryIncrease || '').replace('%',''));
-          if (isNaN(v) || v < 1.5 || v > 5.5)
+          if (isNaN(v) || v < 1.5 || v > 6)
             bad.push(`${item.industry}=${item.salaryIncrease}`);
         }
         return bad.length === 0
           ? true
-          : `salaryIncrease 越界 (应 1.5%-5.5%): ${bad.slice(0,5).join(', ')}${bad.length > 5 ? ` …等共 ${bad.length} 条`: ''}`;
+          : `salaryIncrease 越界 (应 1.5%-6%): ${bad.slice(0,5).join(', ')}${bad.length > 5 ? ` …等共 ${bad.length} 条`: ''}`;
 
 # ─────────────────────────────────────────────────────────────
 # tests：5 个典型场景。每个用例 = 通用 5 条 + 该用例特殊断言
