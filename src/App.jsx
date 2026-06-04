@@ -4,12 +4,14 @@ import RefreshIcon from '@mui/icons-material/Refresh';
 import LogoutIcon from '@mui/icons-material/Logout';
 import SearchForm from './components/SearchForm';
 import SalaryReport from './components/SalaryReport';
-import LoginForm from './components/LoginForm';
-import { fetchSalaryData, fetchMe, logout } from './services/api';
+import { fetchSalaryData, fetchMe, fetchVipStatus } from './services/api';
+
+const CENTER_URL = import.meta.env.VITE_CENTER_URL || 'http://localhost:4004/';
 
 export default function App() {
   const [me, setMe] = useState(null);
   const [meReady, setMeReady] = useState(false);
+  const [isVip, setIsVip] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [report, setReport] = useState(null);
@@ -34,7 +36,10 @@ export default function App() {
     let cancelled = false;
     fetchMe()
       .then((data) => {
-        if (!cancelled) setMe(data);
+        if (!cancelled) {
+          setMe(data);
+          if (data) fetchVipStatus().then((v) => { if (!cancelled) setIsVip(v.isVip); });
+        }
       })
       .catch(() => {
         if (!cancelled) setMe(null);
@@ -86,16 +91,8 @@ export default function App() {
     if (queryParams.position) handleSearch(queryParams);
   };
 
-  const handleLogout = async () => {
-    try {
-      await logout();
-    } catch {
-      /* ignore */
-    }
-    setMe(null);
-    setReport(null);
-    setHasSearched(false);
-    setError(null);
+  const handleLogout = () => {
+    window.location.href = CENTER_URL;
   };
 
   if (!meReady) {
@@ -107,6 +104,7 @@ export default function App() {
   }
 
   if (!me) {
+    const loginUrl = `${CENTER_URL}?from=${encodeURIComponent(window.location.pathname)}`;
     return (
       <Box sx={{ minHeight: '100vh', py: { xs: 6, md: 10 }, backgroundColor: '#f4f6f9' }}>
         <Container maxWidth="sm">
@@ -115,11 +113,24 @@ export default function App() {
               2026岗位薪资查询平台
             </Typography>
             <Box sx={{ width: 40, height: 3, backgroundColor: '#2563eb', mx: 'auto', mt: 1.5, mb: 1.5, borderRadius: 2 }} />
-            <Typography variant="body2" sx={{ color: '#64748b' }}>
-              请先登录以使用查询功能
+            <Typography variant="body2" sx={{ color: '#64748b', mb: 3 }}>
+              请先在薪酬会员中心登录
             </Typography>
+            <Button
+              variant="contained"
+              href={loginUrl}
+              disableElevation
+              sx={{
+                px: 4, py: 1.25,
+                fontSize: '0.95rem', fontWeight: 600,
+                borderRadius: 2,
+                background: 'linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%)',
+                textTransform: 'none',
+              }}
+            >
+              前往登录
+            </Button>
           </Box>
-          <LoginForm onLoggedIn={(data) => setMe(data)} />
         </Container>
       </Box>
     );
@@ -197,7 +208,7 @@ export default function App() {
           </Box>
         )}
 
-        {report && !loading && !error && <SalaryReport report={report} />}
+        {report && !loading && !error && <SalaryReport report={report} isVip={isVip} />}
 
         {!hasSearched && !loading && (
           <Box className="glass-card" sx={{ textAlign: 'center', py: 10, px: 4, mt: 4 }}>

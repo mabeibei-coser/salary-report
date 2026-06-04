@@ -32,12 +32,12 @@ export async function fetchMe() {
   }
 }
 
-export async function loginByPhone(phone) {
-  return http('POST', '/login', { phone });
-}
-
-export async function logout() {
-  return http('POST', '/logout');
+export async function fetchVipStatus() {
+  try {
+    return await http('GET', '/vip/status');
+  } catch {
+    return { isVip: false };
+  }
 }
 
 /**

@@ -11,8 +11,9 @@ const { default: express } = await import("express");
 const { getSession } = await import("./lib/session.js");
 const { getDb, upsertUserByPhone, insertReport, findCachedReport } = await import("./lib/db.js");
 
-const QUERY_CACHE_MS = 30 * 24 * 60 * 60 * 1000; // 30 天内同条件查询直接复用历史结果，保证一致性
+const QUERY_CACHE_MS = 30 * 24 * 60 * 60 * 1000;
 const PORT = Number(process.env.PORT) || 4001;
+const CENTER_BASE_URL = process.env.ATA_CENTER_BASE_URL || "http://localhost:4004";
 const IFLYTEK_URL =
   process.env.IFLYTEK_API_URL ||
   "https://maas-coding-api.cn-huabei-1.xf-yun.com/v2/chat/completions";
@@ -66,45 +67,45 @@ const PHONE_RE = /^1\d{10}$/;
 function requireSession(handler) {
   return async (req, res) => {
     const session = await getSession(req, res);
-    if (!session.userId) {
-      return res.status(401).json({ error: "请先登录" });
+    if (!session.phone) {
+      return res.status(401).json({ error: "请先登录", loginUrl: `${CENTER_BASE_URL}/` });
     }
+    const localUserId = upsertUserByPhone(session.phone);
+    session.userId = localUserId;
     req.session = session;
     return handler(req, res);
   };
 }
 
-// ── 登录 / 登出 / 当前用户 ──
-
-app.post("/api/login", async (req, res) => {
-  const phone = String(req.body?.phone || "").trim();
-  if (!PHONE_RE.test(phone)) {
-    return res.status(400).json({ error: "请输入有效的 11 位手机号" });
-  }
+async function fetchIsVip(req) {
   try {
-    const userId = upsertUserByPhone(phone);
-    const session = await getSession(req, res);
-    session.userId = userId;
-    session.phone = phone;
-    session.loggedInAt = Date.now();
-    await session.save();
-    res.json({ ok: true, userId, phone });
+    const resp = await fetch(`${CENTER_BASE_URL}/api/membership/me`, {
+      headers: { cookie: req.headers.cookie || "" },
+      signal: AbortSignal.timeout(5000),
+    });
+    if (!resp.ok) return false;
+    const data = await resp.json();
+    return !!data.isVip;
   } catch (err) {
-    console.error("[login] failed:", err);
-    res.status(500).json({ error: "登录失败，请稍后重试" });
+    console.error("[salary] 查 VIP 失败:", err?.message || err);
+    return false;
   }
-});
+}
 
-app.post("/api/logout", async (req, res) => {
-  const session = await getSession(req, res);
-  await session.destroy();
-  res.json({ ok: true });
-});
+// ── 当前用户 + VIP 状态 ──
 
 app.get("/api/me", async (req, res) => {
   const session = await getSession(req, res);
-  if (!session.userId) return res.status(401).json({ error: "未登录" });
-  res.json({ userId: session.userId, phone: session.phone });
+  if (!session.phone) return res.status(401).json({ error: "未登录", loginUrl: `${CENTER_BASE_URL}/` });
+  const localUserId = upsertUserByPhone(session.phone);
+  res.json({ userId: localUserId, phone: session.phone });
+});
+
+app.get("/api/vip/status", async (req, res) => {
+  const session = await getSession(req, res);
+  if (!session.phone) return res.status(401).json({ error: "未登录" });
+  const isVip = await fetchIsVip(req);
+  res.json({ isVip, billingUrl: `${CENTER_BASE_URL}/billing` });
 });
 
 // ── 查询：调讯飞 + 入库（一次性原子）──
