@@ -248,11 +248,11 @@ const SYSTEM_PROMPT = `你是一位资深的中国薪酬数据分析专家。你
   "position": "岗位名称",
   "company": "企业性质",
   "rank": "职级代码",
-  "rankLabel": "职级标签",
+  "rankLabel": "职级标签（必须严格逐字复制下方白名单中的字符串，不许新增/删除/替换任何字符）",
   "rankCategory": "tech或mgmt",
   "education": "学历",
   "city": "城市",
-  "rankLadder": [{"rank": "职级代码", "rankLabel": "职级标签", "category": "tech或mgmt", "monthly": 月薪p50, "annual": 年薪p50}],
+  "rankLadder": [{"rank": "职级代码", "rankLabel": "职级标签（同上，必须严格逐字复制白名单）", "category": "tech或mgmt", "monthly": 月薪p50, "annual": 年薪p50}],
   "monthly": {"p25": 月薪, "p50": 月薪, "p75": 月薪},
   "annual": {"p25": 年薪, "p50": 年薪, "p75": 年薪},
   "bonusMonths": {"p25": 月数, "p50": 月数, "p75": 月数},
@@ -265,6 +265,32 @@ const SYSTEM_PROMPT = `你是一位资深的中国薪酬数据分析专家。你
   "cityAnalysis": [{"city": "城市名", "monthlyAvg": 月薪均值, "costIndex": 生活成本指数(以北京=100), "salaryLevel": "高/中/低", "advantage": "该城市优势一句话"}],
   "highEarnerTraits": "该岗位较高薪资人群的特点描述，200字以内"
 }
+
+## 职级标签白名单（rankLabel / rankLadder[].rankLabel 必须严格逐字复制下列字符串，不许新增/删除/替换任何字符，不许重组括号内容）
+
+技术序列（category 必须为 "tech"）：
+- P1 → "P1(文员/助理)"
+- P2 → "P2(初级专员/技术员)"
+- P3 → "P3(中级)"
+- P4 → "P4(高级专员/技术员)"
+- P5 → "P5(资深/工程师)"
+- P6 → "P6(专家/独立负责)"
+- P7 → "P7(高级专家/模块负责人)"
+- P8 → "P8(资深专家/领域负责人)"
+- P9 → "P9(首席/行业权威)"
+
+管理序列（category 必须为 "mgmt"）：
+- M1 → "M1(团队主管)"
+- M2 → "M2(经理)"
+- M3 → "M3(高级经理)"
+- M4 → "M4(总监)"
+- M5 → "M5(副总裁)"
+
+错误示例（任何下列写法都不合法）：
+- "P5中级)" （括号不闭合 / 截断）
+- "P8专家(领域负责人)" （丢字 / 重组）
+- "P7总监级" （凭空发明）
+- "P6高级(独立负责)" （改字）
 
 ## 生成工作流（必须严格按此顺序执行，不可跳步）
 
@@ -380,8 +406,21 @@ function validateAndNormalize(data, params) {
   data.position = data.position || params.position;
   data.company = data.company || params.company;
   data.rank = data.rank || params.rank;
-  data.rankLabel = data.rankLabel || params.rank;
-  data.rankCategory = data.rankCategory || "tech";
+  // rankLabel / rankCategory 一律按本地白名单字典强制覆盖 AI 的输出。
+  // 原因：prompt 给了"职级具体化描述"长段中文，AI 会简略/重组括号内容，
+  // 导致 DB rank_label 列同一职级出现多个版本（P5 → "P5中级)"/"P5领域(领域骨干)" 等）。
+  // 强制以 STANDARD_RANK_LADDER 为唯一事实源；rank 命中失败时才回到原来的兜底。
+  const stdRank = STANDARD_RANK_LADDER.find(
+    (s) => s.rank === String(data.rank).trim().toUpperCase(),
+  );
+  if (stdRank) {
+    data.rank = stdRank.rank;
+    data.rankLabel = stdRank.rankLabel;
+    data.rankCategory = stdRank.category;
+  } else {
+    data.rankLabel = data.rankLabel || params.rank;
+    data.rankCategory = data.rankCategory || "tech";
+  }
   data.education = data.education || params.education;
   data.city = data.city || params.city;
 
@@ -434,13 +473,14 @@ function validateAndNormalize(data, params) {
       };
     });
   } else {
-    // AI 给齐了 14 条，但顺序可能错乱 → 按 STANDARD_RANK_LADDER 顺序重排，并补齐缺失的 rankLabel/category
+    // AI 给齐了 14 条，但顺序可能错乱 → 按 STANDARD_RANK_LADDER 顺序重排。
+    // rankLabel / category 一律按字典强制覆盖（AI 自编版本会污染下游报告渲染与 admin 列表）。
     data.rankLadder = STANDARD_RANK_LADDER.map((std) => {
       const got = ladderByRank.get(std.rank);
       return {
         rank: std.rank,
-        rankLabel: got.rankLabel || std.rankLabel,
-        category: got.category || std.category,
+        rankLabel: std.rankLabel,
+        category: std.category,
         monthly: got.monthly,
         annual: got.annual,
       };
