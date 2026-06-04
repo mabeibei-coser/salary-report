@@ -17,15 +17,15 @@ export default function App() {
   const [report, setReport] = useState(null);
   const [hasSearched, setHasSearched] = useState(false);
   const [queryParams, setQueryParams] = useState({ position: '', company: '', rank: '', education: '', city: '' });
-  const [countdown, setCountdown] = useState(20);
+  const [countdown, setCountdown] = useState(45);
 
-  // loading 期间倒计时 20s → 0s，loading 结束自动复位
+  // loading 期间倒计时 45s → 0s，loading 结束自动复位
   useEffect(() => {
     if (!loading) {
-      setCountdown(20);
+      setCountdown(45);
       return;
     }
-    setCountdown(20);
+    setCountdown(45);
     const timer = setInterval(() => {
       setCountdown((prev) => (prev > 0 ? prev - 1 : 0));
     }, 1000);
@@ -196,7 +196,7 @@ export default function App() {
             <Typography variant="subtitle1" sx={{ color: 'text.secondary', mb: 1 }}>正在分析薪酬数据...</Typography>
             <Typography variant="body2" sx={{ color: 'text.disabled' }}>AI 正在为您生成专业的薪酬分析报告，请稍候</Typography>
             <Typography variant="caption" sx={{ display: 'block', color: 'text.disabled', mt: 2, fontVariantNumeric: 'tabular-nums' }}>
-              {countdown > 0 ? `预计 20 秒完成 · 还剩 ${countdown} 秒` : '预计 20 秒完成 · 仍在生成…'}
+              {countdown > 0 ? `预计 45 秒完成 · 还剩 ${countdown} 秒` : '预计 45 秒完成 · 仍在生成…'}
             </Typography>
           </Box>
         )}

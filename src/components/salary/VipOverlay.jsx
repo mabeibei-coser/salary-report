@@ -1,4 +1,5 @@
 import React from 'react';
+import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium';
 
 const CENTER_URL = import.meta.env.VITE_CENTER_URL || 'http://localhost:4004/';
 
@@ -12,7 +13,7 @@ export default function VipOverlay({ isVip, children }) {
       </div>
       <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/60 backdrop-blur-sm rounded-xl">
         <div className="text-center px-4 py-6">
-          <div className="text-2xl mb-2">👑</div>
+          <WorkspacePremiumIcon style={{ fontSize: 32, color: '#b08a3e', display: 'block', margin: '0 auto 8px' }} />
           <p className="text-sm font-semibold text-gray-800 mb-1">VIP 会员可见</p>
           <p className="text-xs text-gray-500 mb-3">开通 VIP 解锁行业细分与高薪人群数据</p>
           <a
