@@ -10,10 +10,10 @@ const LEVEL_TONE = {
   低: 'warning',
 };
 
-export default function CitySection({ data, index, total }) {
+export default function CitySection({ data, index, total, locked }) {
   if (!data || data.length === 0) {
     return (
-      <SectionWrapper id="city" title="城市对比" index={index} total={total}>
+      <SectionWrapper id="city" title="城市对比" index={index} total={total} locked={locked}>
         <div className="text-[13px] text-center py-4" style={{ color: 'var(--report-ink-muted)' }}>
           暂无城市数据
         </div>
@@ -22,7 +22,7 @@ export default function CitySection({ data, index, total }) {
   }
 
   return (
-    <SectionWrapper id="city" title="城市对比" index={index} total={total}>
+    <SectionWrapper id="city" title="城市对比" index={index} total={total} locked={locked}>
       <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
         {data.map((c, i) => (
           <div

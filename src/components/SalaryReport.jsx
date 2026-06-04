@@ -4,7 +4,6 @@ import OverviewSection from './salary/OverviewSection';
 import MarketSection from './salary/MarketSection';
 import CitySection from './salary/CitySection';
 import IndustrySection from './salary/IndustrySection';
-import VipOverlay from './salary/VipOverlay';
 
 const TOTAL = 4;
 
@@ -24,12 +23,8 @@ export default function SalaryReport({ report, isVip }) {
     >
       <OverviewSection data={report} index={1} total={TOTAL} />
       <MarketSection data={report} index={2} total={TOTAL} />
-      <VipOverlay isVip={isVip}>
-        <CitySection data={report.cityAnalysis} index={3} total={TOTAL} />
-      </VipOverlay>
-      <VipOverlay isVip={isVip}>
-        <IndustrySection data={report.industryAnalysis} index={4} total={TOTAL} />
-      </VipOverlay>
+      <CitySection data={report.cityAnalysis} index={3} total={TOTAL} locked={!isVip} />
+      <IndustrySection data={report.industryAnalysis} index={4} total={TOTAL} locked={!isVip} />
     </Box>
   );
 }

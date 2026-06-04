@@ -9,10 +9,10 @@ const DEMAND_TONE = {
   低: 'warning',
 };
 
-export default function IndustrySection({ data, index, total }) {
+export default function IndustrySection({ data, index, total, locked }) {
   if (!data || data.length === 0) {
     return (
-      <SectionWrapper id="industry" title="细分行业分析" index={index} total={total}>
+      <SectionWrapper id="industry" title="细分行业分析" index={index} total={total} locked={locked}>
         <div className="text-[13px] text-center py-4" style={{ color: 'var(--report-ink-muted)' }}>
           暂无行业数据
         </div>
@@ -20,7 +20,7 @@ export default function IndustrySection({ data, index, total }) {
     );
   }
   return (
-    <SectionWrapper id="industry" title="细分行业分析" index={index} total={total}>
+    <SectionWrapper id="industry" title="细分行业分析" index={index} total={total} locked={locked}>
       <div className="overflow-x-auto -mx-1">
         <table className="w-full text-[12.5px] border-separate border-spacing-y-1.5" style={{ minWidth: 680 }}>
           <thead>

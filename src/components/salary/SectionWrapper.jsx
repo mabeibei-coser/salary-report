@@ -1,8 +1,9 @@
 // 复刻自 admin-hub/components/report/salary/section-wrapper.tsx
 // 不使用 framer-motion（入场动画由 SalaryReport 主容器统一处理）
 import React from 'react';
+import VipOverlay from './VipOverlay';
 
-export default function SectionWrapper({ id, title, index, total, takeaway, meta, children }) {
+export default function SectionWrapper({ id, title, index, total, takeaway, meta, locked, children }) {
   const paddedIndex = String(index).padStart(2, '0');
   const paddedTotal = String(total).padStart(2, '0');
 
@@ -35,7 +36,7 @@ export default function SectionWrapper({ id, title, index, total, takeaway, meta
         </div>
         {takeaway && <p className="report-takeaway mt-3">{takeaway}</p>}
       </header>
-      {children}
+      <VipOverlay isVip={!locked}>{children}</VipOverlay>
     </section>
   );
 }
