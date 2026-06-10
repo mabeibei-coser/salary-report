@@ -21,7 +21,7 @@ providers:
       # body 必须是字段（promptfoo 强制要求）。raw 字符串模板：
       # promptfoo 把 chat-format prompt 序列化成 JSON 字符串后存入 {{prompt}}
       # safe filter 防止 nunjucks 把已是 JSON 的内容做 HTML escape
-      body: '{"model":"astron-code-latest","messages":{{ prompt | safe }},"temperature":0.3,"max_tokens":6144}'
+      body: '{"model":"astron-code-latest","messages":{{ prompt | safe }},"temperature":0.3,"max_tokens":8192}'
       transformResponse: "json.choices[0].message.content"
 
 # ─────────────────────────────────────────────────────────────
@@ -57,13 +57,13 @@ defaultTest:
         }
         return true;
 
-    # 3. industryAnalysis 必须 15 个（prompt 规则 #4）
+    # 3. industryAnalysis 必须 25 个（prompt 规则 #4）
     - type: javascript
       value: |
         const r = JSON.parse(output);
-        return Array.isArray(r.industryAnalysis) && r.industryAnalysis.length === 15
+        return Array.isArray(r.industryAnalysis) && r.industryAnalysis.length === 25
           ? true
-          : `industryAnalysis 应有 15 个, 实际 ${r.industryAnalysis?.length}`;
+          : `industryAnalysis 应有 25 个, 实际 ${r.industryAnalysis?.length}`;
 
     # 4. cityAnalysis 必须 6 个（prompt 规则 #5）
     - type: javascript

@@ -4,7 +4,7 @@
 
 ## 一句话原理
 
-把 server.js 里的 system prompt 抽到 `prompts/salary-system-v1.yaml`，用 5 个典型场景跑讯飞 API，看输出是否满足 prompt 里规定的硬规则（5 个趋势点单调递增 / 15 个行业 / 6 个城市 / p25<p50<p75 等）。
+把 server.js 里的 system prompt 抽到 `prompts/salary-system-v1.yaml`，用 5 个典型场景跑讯飞 API，看输出是否满足 prompt 里规定的硬规则（5 个趋势点单调递增 / 25 个行业 / 6 个城市 / p25<p50<p75 等）。
 
 改 prompt → 跑一次 → 看哪条 assertion 变红 / 变绿 → 决定要不要保留。
 

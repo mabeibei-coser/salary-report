@@ -40,7 +40,7 @@ const report = {
     { company: "国有企业", monthly: 19000, annual: 247000 },
     { company: "初创公司", monthly: 21000, annual: 273000 },
   ],
-  industryAnalysis: Array.from({ length: 9 }, (_, i) => ({
+  industryAnalysis: Array.from({ length: 25 }, (_, i) => ({
     industry: `行业${i + 1}`,
     description: `第 ${i + 1} 个细分行业说明`,
     monthlyRange: "18k–32k",
