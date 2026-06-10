@@ -14,13 +14,21 @@ const { getDb, upsertUserByPhone, insertReport, findCachedReport } = await impor
 const QUERY_CACHE_MS = 30 * 24 * 60 * 60 * 1000;
 const PORT = Number(process.env.PORT) || 4001;
 const CENTER_BASE_URL = process.env.ATA_CENTER_BASE_URL || "http://localhost:4004";
-const IFLYTEK_URL =
+
+// 主模型：讯飞 astron-code-latest
+const PRIMARY_URL =
   process.env.IFLYTEK_API_URL ||
   "https://maas-coding-api.cn-huabei-1.xf-yun.com/v2/chat/completions";
-const IFLYTEK_API_KEY =
+const PRIMARY_KEY =
   process.env.IFLYTEK_API_KEY || process.env.VITE_GLM_API_KEY;
-const IFLYTEK_MODEL =
+const PRIMARY_MODEL =
   process.env.IFLYTEK_MODEL || process.env.VITE_GLM_MODEL || "astron-code-latest";
+
+// 备用模型：env 全配上时启用；任一为空都跳过备用，主模型失败直接报错
+const BACKUP_URL = process.env.BACKUP_API_URL || "";
+const BACKUP_KEY = process.env.BACKUP_API_KEY || "";
+const BACKUP_MODEL = process.env.BACKUP_MODEL || "";
+const BACKUP_ENABLED = !!(BACKUP_URL && BACKUP_KEY && BACKUP_MODEL);
 
 const app = express();
 app.set("trust proxy", true);
@@ -143,83 +151,84 @@ app.post(
       }
     }
 
-    if (!IFLYTEK_API_KEY) {
+    if (!PRIMARY_KEY) {
       return res.status(500).json({ error: "服务器未配置 AI API key" });
     }
 
+    const messages = [
+      { role: "system", content: SYSTEM_PROMPT },
+      { role: "user", content: buildUserMessage({ position, company, rank, education, city }) },
+    ];
+
     const startedAt = Date.now();
+    let report = null;
+
+    // 主模型
     try {
-      const upstream = await fetch(IFLYTEK_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${IFLYTEK_API_KEY}`,
-        },
-        body: JSON.stringify({
-          model: IFLYTEK_MODEL,
-          messages: [
-            { role: "system", content: SYSTEM_PROMPT },
-            { role: "user", content: buildUserMessage({ position, company, rank, education, city }) },
-          ],
-          temperature: 0.3,
-          max_tokens: 6144,
-        }),
-        signal: AbortSignal.timeout(60_000),
-      });
-
-      if (!upstream.ok) {
-        const text = await upstream.text().catch(() => "");
-        console.error("[queries] iFlytek HTTP", upstream.status, text.slice(0, 300));
-        return res.status(502).json({ error: `AI 请求失败 (${upstream.status})` });
-      }
-
-      const result = await upstream.json();
-      const content = result?.choices?.[0]?.message?.content;
-      if (!content) {
-        return res.status(502).json({ error: "AI 返回内容为空" });
-      }
-
-      let cleaned = String(content).trim();
-      if (cleaned.startsWith("```")) {
-        cleaned = cleaned.replace(/^```(?:json)?\s*\n?/, "").replace(/\n?```\s*$/, "");
-      }
-
-      let report;
-      try {
-        report = JSON.parse(cleaned);
-      } catch {
-        return res.status(502).json({ error: "AI 返回内容不是有效 JSON" });
-      }
-
-      report = validateAndNormalize(report, { position, company, rank, education, city });
-
-      const durationMs = Date.now() - startedAt;
-      const reportId = insertReport({
-        userId: req.session.userId,
-        userPhone: req.session.phone,
-        createdAt: Date.now(),
-        position,
-        company,
-        rank,
-        rankLabel: report.rankLabel || null,
-        education,
-        city,
-        report,
-        durationMs,
-        ip: req.ip,
-        userAgent: req.headers["user-agent"] || null,
-      });
-
-      res.json({ ok: true, reportId, report, durationMs });
-    } catch (err) {
-      if (err?.name === "TimeoutError" || err?.name === "AbortError") {
-        return res.status(504).json({ error: "请求超时（60秒），请稍后重试" });
-      }
-      console.error("[queries] failed:", err);
-      res.status(500).json({ error: "查询失败，请稍后重试" });
+      report = await callLLM({ url: PRIMARY_URL, apiKey: PRIMARY_KEY, model: PRIMARY_MODEL, messages });
+    } catch (primaryErr) {
+      console.error("[queries] 主模型失败:", primaryErr?.message || primaryErr);
     }
+
+    // 备用模型（仅当主失败且备用 env 配齐时）
+    if (!report && BACKUP_ENABLED) {
+      try {
+        report = await callLLM({ url: BACKUP_URL, apiKey: BACKUP_KEY, model: BACKUP_MODEL, messages });
+      } catch (backupErr) {
+        console.error("[queries] 备用模型失败:", backupErr?.message || backupErr);
+      }
+    }
+
+    if (!report) {
+      return res.status(504).json({ error: "查询超时，请重试" });
+    }
+
+    const durationMs = Date.now() - startedAt;
+    const reportId = insertReport({
+      userId: req.session.userId,
+      userPhone: req.session.phone,
+      createdAt: Date.now(),
+      position,
+      company,
+      rank,
+      rankLabel: report.rankLabel || null,
+      education,
+      city,
+      report,
+      durationMs,
+      ip: req.ip,
+      userAgent: req.headers["user-agent"] || null,
+    });
+
+    res.json({ ok: true, reportId, report, durationMs });
   })
 );
+
+// 调用一个 LLM endpoint，返回解析后的 JSON 报告。
+// 质检只剩一项：返回内容必须能 JSON.parse。任何环节失败都抛异常，由外层决定是否走备用模型。
+async function callLLM({ url, apiKey, model, messages }, timeoutMs = 60_000) {
+  const upstream = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({ model, messages, temperature: 0.3, max_tokens: 6144 }),
+    signal: AbortSignal.timeout(timeoutMs),
+  });
+  if (!upstream.ok) {
+    const text = await upstream.text().catch(() => "");
+    throw new Error(`HTTP ${upstream.status} ${text.slice(0, 200)}`);
+  }
+  const result = await upstream.json();
+  const content = result?.choices?.[0]?.message?.content;
+  if (!content) throw new Error("AI 返回内容为空");
+  let cleaned = String(content).trim();
+  if (cleaned.startsWith("```")) {
+    cleaned = cleaned.replace(/^```(?:json)?\s*\n?/, "").replace(/\n?```\s*$/, "");
+  }
+  return JSON.parse(cleaned);
+}
 
 // ── 生产模式：托管 dist/ 静态资源 ──
 if (process.env.NODE_ENV === "production") {
@@ -389,202 +398,4 @@ function buildUserMessage({ position, company, rank, education, city }) {
 - 所在城市：${city}
 
 请严格按系统提示的JSON格式返回完整数据，确保所有五项参数都体现在薪酬数据中。`;
-}
-
-// 14 个标准职级 + 相对 P4(=1.00) 的系数（与 src/data/salaryDatabase.js 的 rankMultiplier 对齐，
-// 用于 AI 漏返/返错 rankLadder 时的兜底回填）
-const STANDARD_RANK_LADDER = [
-  { rank: "P1", rankLabel: "P1(文员/助理)", category: "tech", mult: 0.40 },
-  { rank: "P2", rankLabel: "P2(初级专员/技术员)", category: "tech", mult: 0.55 },
-  { rank: "P3", rankLabel: "P3(中级)", category: "tech", mult: 0.78 },
-  { rank: "P4", rankLabel: "P4(高级专员/技术员)", category: "tech", mult: 1.00 },
-  { rank: "P5", rankLabel: "P5(资深/工程师)", category: "tech", mult: 1.30 },
-  { rank: "P6", rankLabel: "P6(专家/独立负责)", category: "tech", mult: 1.65 },
-  { rank: "P7", rankLabel: "P7(高级专家/模块负责人)", category: "tech", mult: 1.85 },
-  { rank: "P8", rankLabel: "P8(资深专家/领域负责人)", category: "tech", mult: 2.10 },
-  { rank: "P9", rankLabel: "P9(首席/行业权威)", category: "tech", mult: 2.80 },
-  { rank: "M1", rankLabel: "M1(团队主管)", category: "mgmt", mult: 1.10 },
-  { rank: "M2", rankLabel: "M2(经理)", category: "mgmt", mult: 1.45 },
-  { rank: "M3", rankLabel: "M3(高级经理)", category: "mgmt", mult: 1.85 },
-  { rank: "M4", rankLabel: "M4(总监)", category: "mgmt", mult: 2.40 },
-  { rank: "M5", rankLabel: "M5(副总裁)", category: "mgmt", mult: 3.10 },
-];
-
-function validateAndNormalize(data, params) {
-  data.position = data.position || params.position;
-  data.company = data.company || params.company;
-  data.rank = data.rank || params.rank;
-  // rankLabel / rankCategory 一律按本地白名单字典强制覆盖 AI 的输出。
-  // 原因：prompt 给了"职级具体化描述"长段中文，AI 会简略/重组括号内容，
-  // 导致 DB rank_label 列同一职级出现多个版本（P5 → "P5中级)"/"P5领域(领域骨干)" 等）。
-  // 强制以 STANDARD_RANK_LADDER 为唯一事实源；rank 命中失败时才回到原来的兜底。
-  const stdRank = STANDARD_RANK_LADDER.find(
-    (s) => s.rank === String(data.rank).trim().toUpperCase(),
-  );
-  if (stdRank) {
-    data.rank = stdRank.rank;
-    data.rankLabel = stdRank.rankLabel;
-    data.rankCategory = stdRank.category;
-  } else {
-    data.rankLabel = data.rankLabel || params.rank;
-    data.rankCategory = data.rankCategory || "tech";
-  }
-  data.education = data.education || params.education;
-  data.city = data.city || params.city;
-
-  for (const key of ["monthly", "annual", "bonusMonths", "equity", "housingFund", "hourlyRate"]) {
-    data[key] = data[key] || {};
-    for (const p of ["p25", "p50", "p75"]) {
-      data[key][p] = Math.round(Number(data[key]?.[p]) || 0);
-    }
-  }
-
-  // ── rankLadder 全职级薪酬锚定表兜底 ──
-  // 期望：14 条，顺序 P1-P9 + M1-M5，每条 { rank, rankLabel, category, monthly, annual }
-  // 失败兜底：基于本报告 monthly.p50 + 用户职级，反推该岗位的 P4 基准月薪，再按 STANDARD_RANK_LADDER 系数生成全表
-  const ladderInput = Array.isArray(data.rankLadder) ? data.rankLadder : [];
-  const ladderByRank = new Map();
-  for (const item of ladderInput) {
-    if (!item || typeof item !== "object") continue;
-    const rk = String(item.rank || "").trim().toUpperCase();
-    if (!rk) continue;
-    ladderByRank.set(rk, {
-      rank: rk,
-      rankLabel: item.rankLabel || rk,
-      category: item.category === "mgmt" ? "mgmt" : "tech",
-      monthly: Math.round(Number(item.monthly) || 0),
-      annual: Math.round(Number(item.annual) || 0),
-    });
-  }
-
-  const allLadderOk = STANDARD_RANK_LADDER.every((std) => {
-    const got = ladderByRank.get(std.rank);
-    return got && got.monthly > 0 && got.annual > 0;
-  });
-
-  if (!allLadderOk) {
-    // 用户选择的职级在标准表里的系数，结合 monthly.p50 推导 P4 基准
-    const userRankStd = STANDARD_RANK_LADDER.find((s) => s.rank === data.rank);
-    const p50 = data.monthly.p50 || 0;
-    const baseP4 = userRankStd && p50 > 0 ? p50 / userRankStd.mult : p50 || 18000;
-    // 年终奖月数（用于 annual = monthly × (12 + bonus)），缺失时按 2 个月兜底
-    const bonusForAnnual = Number(data.bonusMonths?.p50) > 0 ? Number(data.bonusMonths.p50) : 2;
-    data.rankLadder = STANDARD_RANK_LADDER.map((std) => {
-      const monthly = Math.round(baseP4 * std.mult / 100) * 100;
-      const annual = Math.round(monthly * (12 + bonusForAnnual) / 100) * 100;
-      return {
-        rank: std.rank,
-        rankLabel: std.rankLabel,
-        category: std.category,
-        monthly,
-        annual,
-      };
-    });
-  } else {
-    // AI 给齐了 14 条，但顺序可能错乱 → 按 STANDARD_RANK_LADDER 顺序重排。
-    // rankLabel / category 一律按字典强制覆盖（AI 自编版本会污染下游报告渲染与 admin 列表）。
-    data.rankLadder = STANDARD_RANK_LADDER.map((std) => {
-      const got = ladderByRank.get(std.rank);
-      return {
-        rank: std.rank,
-        rankLabel: std.rankLabel,
-        category: std.category,
-        monthly: got.monthly,
-        annual: got.annual,
-      };
-    });
-    // 单调性校正：P1-P9 必须递增，M1-M5 必须递增
-    const pSeries = data.rankLadder.filter((r) => r.category === "tech");
-    const mSeries = data.rankLadder.filter((r) => r.category === "mgmt");
-    for (const series of [pSeries, mSeries]) {
-      for (let i = 1; i < series.length; i++) {
-        if (series[i].monthly <= series[i - 1].monthly) {
-          series[i].monthly = Math.round(series[i - 1].monthly * 1.05 / 100) * 100;
-          const bonus = Number(data.bonusMonths?.p50) > 0 ? Number(data.bonusMonths.p50) : 2;
-          series[i].annual = Math.round(series[i].monthly * (12 + bonus) / 100) * 100;
-        }
-      }
-    }
-  }
-
-  // ── 摘取自洽：monthly.p50 / annual.p50 必须等于 rankLadder 中对应职级的 monthly/annual ──
-  const ladderRow = data.rankLadder.find((r) => r.rank === data.rank);
-  if (ladderRow) {
-    if (ladderRow.monthly > 0) data.monthly.p50 = ladderRow.monthly;
-    if (ladderRow.annual > 0) data.annual.p50 = ladderRow.annual;
-    // p25/p75 若错乱（≤0 或顺序倒置），按 ±13% 重算（落在 prompt 要求的 spread 中段）
-    if (!(data.monthly.p25 > 0 && data.monthly.p25 < data.monthly.p50)) {
-      data.monthly.p25 = Math.round(data.monthly.p50 * 0.87 / 100) * 100;
-    }
-    if (!(data.monthly.p75 > data.monthly.p50)) {
-      data.monthly.p75 = Math.round(data.monthly.p50 * 1.13 / 100) * 100;
-    }
-    if (!(data.annual.p25 > 0 && data.annual.p25 < data.annual.p50)) {
-      data.annual.p25 = Math.round(data.annual.p50 * 0.87 / 100) * 100;
-    }
-    if (!(data.annual.p75 > data.annual.p50)) {
-      data.annual.p75 = Math.round(data.annual.p50 * 1.13 / 100) * 100;
-    }
-  }
-
-  data.marketComparison = data.marketComparison || {};
-  data.marketComparison.marketAvgMonthly = Math.round(Number(data.marketComparison.marketAvgMonthly) || 0);
-  data.marketComparison.diffPct = Math.round(Number(data.marketComparison.diffPct) || 0);
-
-  data.salaryTrend = (Array.isArray(data.salaryTrend) ? data.salaryTrend : []).map((item) => ({
-    year: Math.round(Number(item.year) || 0),
-    monthly: Math.round(Number(item.monthly) || 0),
-  })).filter((item) => item.year > 0 && item.monthly > 0)
-    .sort((a, b) => a.year - b.year);
-
-  // 兜底 + 单调性校正：
-  // 1) 长度不足 5 时，基于当前 p50 回填线性递增（每年约 4.5%）
-  // 2) AI 返回了 5 个点但出现持平/下降时，用前一年 × 1.025 修正成单调递增，再把末年钉成 p50
-  const trendOk = data.salaryTrend.length === 5
-    && data.salaryTrend.every((d, i) => i === 0 || Number(d.monthly) > Number(data.salaryTrend[i - 1].monthly));
-  if (!trendOk) {
-    const p50 = data.monthly.p50 || 0;
-    if (p50 > 0) {
-      if (data.salaryTrend.length === 5) {
-        // 保留 AI 估算的形状，但强制每年至少涨 2.5%（落在 0-5.5% 中间值）
-        for (let i = 1; i < 5; i++) {
-          const prev = Number(data.salaryTrend[i - 1].monthly);
-          const cur = Number(data.salaryTrend[i].monthly);
-          if (!(cur > prev)) {
-            data.salaryTrend[i].monthly = Math.round(prev * 1.025 / 100) * 100;
-          }
-        }
-        data.salaryTrend[4].monthly = p50;
-      } else {
-        data.salaryTrend = [2022, 2023, 2024, 2025, 2026].map((y, i) => ({
-          year: y,
-          monthly: Math.round(p50 * (0.82 + 0.045 * i) / 100) * 100,
-        }));
-        data.salaryTrend[4].monthly = p50;
-      }
-    }
-  }
-
-  data.industryAnalysis = (Array.isArray(data.industryAnalysis) ? data.industryAnalysis : []).map((item) => ({
-    industry: item.industry || "未命名行业",
-    description: item.description || "",
-    monthlyRange: item.monthlyRange || "--",
-    annualRange: item.annualRange || "--",
-    demandLevel: item.demandLevel || "中",
-    salaryIncrease: item.salaryIncrease || "--",
-  }));
-
-  data.cityAnalysis = (Array.isArray(data.cityAnalysis) ? data.cityAnalysis : []).map((item) => ({
-    city: item.city || "",
-    monthlyAvg: Math.round(Number(item.monthlyAvg) || 0),
-    costIndex: Math.round(Number(item.costIndex) || 100),
-    salaryLevel: item.salaryLevel || "中",
-    advantage: item.advantage || "",
-  }));
-
-  data.highEarnerTraits =
-    data.highEarnerTraits ||
-    "该岗位较高薪资人群通常具备：丰富行业经验、核心项目主导能力、跨部门协作经验、持续学习与技术迭代能力。";
-
-  return data;
 }

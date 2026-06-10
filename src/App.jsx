@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { Box, Container, Typography, CircularProgress, Button, Alert, IconButton, Tooltip } from '@mui/material';
+import { Box, Container, Typography, CircularProgress, Button, Alert } from '@mui/material';
 import RefreshIcon from '@mui/icons-material/Refresh';
-import LogoutIcon from '@mui/icons-material/Logout';
+import HomeIcon from '@mui/icons-material/Home';
 import SearchForm from './components/SearchForm';
 import SalaryReport from './components/SalaryReport';
 import { fetchSalaryData, fetchMe, fetchVipStatus } from './services/api';
@@ -91,7 +91,7 @@ export default function App() {
     if (queryParams.position) handleSearch(queryParams);
   };
 
-  const handleLogout = () => {
+  const handleBackHome = () => {
     window.location.href = CENTER_URL;
   };
 
@@ -144,25 +144,50 @@ export default function App() {
   return (
     <Box sx={{ minHeight: '100vh', py: { xs: 2, md: 4 }, backgroundColor: '#f4f6f9' }}>
       <Container maxWidth="lg">
-        {/* 顶部手机号一行：独占顶部一行，靠右，位于主标题上方 */}
+        {/* 顶部工具栏：左侧返回首页按钮 + 右侧数据库版本标签 */}
         <Box
           sx={{
             display: 'flex',
-            justifyContent: 'flex-end',
+            justifyContent: 'space-between',
             alignItems: 'center',
-            gap: 0.5,
             mt: { xs: 0.5, md: 1 },
             mb: { xs: 1, md: 1.5 },
           }}
         >
-          <Typography variant="caption" sx={{ color: '#64748b', fontSize: { xs: '0.7rem', md: '0.75rem' } }}>
-            {me.phone ? `${me.phone.slice(0, 3)}******${me.phone.slice(-2)}` : ''}
-          </Typography>
-          <Tooltip title="退出登录">
-            <IconButton size="small" onClick={handleLogout} sx={{ color: '#94a3b8', p: 0.5 }}>
-              <LogoutIcon sx={{ fontSize: 16 }} />
-            </IconButton>
-          </Tooltip>
+          <Button
+            size="small"
+            startIcon={<HomeIcon sx={{ fontSize: 16 }} />}
+            onClick={handleBackHome}
+            sx={{
+              color: '#64748b',
+              fontSize: { xs: '0.7rem', md: '0.75rem' },
+              fontWeight: 500,
+              textTransform: 'none',
+              minWidth: 0,
+              px: 1,
+              py: 0.25,
+              '&:hover': { backgroundColor: 'rgba(30,58,95,0.06)', color: '#1e3a5f' },
+            }}
+          >
+            返回首页
+          </Button>
+          <Box
+            component="span"
+            sx={{
+              backgroundColor: '#1e3a5f',
+              color: '#fff',
+              fontSize: { xs: '0.625rem', md: '0.7rem' },
+              fontWeight: 600,
+              px: 0.9,
+              py: 0.3,
+              borderRadius: '6px',
+              lineHeight: 1.2,
+              whiteSpace: 'nowrap',
+              letterSpacing: 0.5,
+            }}
+          >
+            大数据库版本 {dbVersion}
+          </Box>
         </Box>
 
         {/* 标题区 */}
@@ -212,16 +237,12 @@ export default function App() {
 
         {!hasSearched && !loading && (
           <Box className="glass-card" sx={{ textAlign: 'center', py: 10, px: 4, mt: 4 }}>
-            <Typography variant="h6" sx={{ color: 'text.secondary', mb: 1, fontSize: { xs: '1rem', md: '1.25rem' }, whiteSpace: 'nowrap' }}>填写条件，点击查询薪酬</Typography>
-            <Typography variant="body2" sx={{ color: 'text.disabled' }}>岗位薪资大数据库版本 {dbVersion}</Typography>
+            <Typography variant="h6" sx={{ color: 'text.secondary', fontSize: { xs: '1rem', md: '1.25rem' }, whiteSpace: 'nowrap' }}>填写条件，点击查询薪酬</Typography>
           </Box>
         )}
       </Container>
 
       <Box component="footer" sx={{ textAlign: 'center', py: 3, mt: 6, borderTop: '1px solid rgba(0,0,0,0.05)' }}>
-        <Typography variant="caption" sx={{ color: '#94a3b8', fontStyle: 'italic', display: 'block', mb: 0.5 }}>
-          岗位薪资大数据库版本 {dbVersion}
-        </Typography>
         <Typography variant="caption" sx={{ color: '#94a3b8' }}>2026岗位薪资查询平台  ·  数据由谨世智能大数据实验室提供  ·  仅供参考</Typography>
       </Box>
     </Box>
