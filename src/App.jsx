@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { Box, Container, Typography, CircularProgress, Button, Alert } from '@mui/material';
+import { Box, Container, Typography, CircularProgress, Button, IconButton, Alert } from '@mui/material';
 import RefreshIcon from '@mui/icons-material/Refresh';
-import HomeIcon from '@mui/icons-material/Home';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import SearchForm from './components/SearchForm';
 import SalaryReport from './components/SalaryReport';
-import { fetchSalaryData, fetchMe, fetchVipStatus } from './services/api';
+import { fetchSalaryData, fetchMe, fetchVipStatus, fetchHistoryReport } from './services/api';
 
 const CENTER_URL = import.meta.env.VITE_CENTER_URL || 'http://localhost:4004/';
 
@@ -18,6 +18,9 @@ export default function App() {
   const [hasSearched, setHasSearched] = useState(false);
   const [queryParams, setQueryParams] = useState({ position: '', company: '', rank: '', education: '', city: '' });
   const [countdown, setCountdown] = useState(45);
+  // 历史报告深链模式：?historyId=xxx 进来时跳过搜索表单，直接渲染当时入库的报告
+  const [historyMode, setHistoryMode] = useState(false);
+  const [historyCreatedAt, setHistoryCreatedAt] = useState(null);
 
   // loading 期间倒计时 45s → 0s，loading 结束自动复位
   useEffect(() => {
@@ -36,10 +39,29 @@ export default function App() {
     let cancelled = false;
     fetchMe()
       .then((data) => {
-        if (!cancelled) {
-          setMe(data);
-          if (data) fetchVipStatus().then((v) => { if (!cancelled) setIsVip(v.isVip); });
-        }
+        if (cancelled) return;
+        setMe(data);
+        if (!data) return;
+        fetchVipStatus().then((v) => { if (!cancelled) setIsVip(v.isVip); });
+        // 历史报告深链：?historyId=xxx 跳过表单直接渲染历史报告
+        const historyId = new URLSearchParams(window.location.search).get('historyId');
+        if (!historyId) return;
+        setHistoryMode(true);
+        fetchHistoryReport(historyId)
+          .then((detail) => {
+            if (cancelled) return;
+            setReport(detail.report);
+            setQueryParams({
+              position: detail.position, company: detail.company, rank: detail.rank,
+              education: detail.education, city: detail.city,
+            });
+            setHistoryCreatedAt(detail.createdAt);
+            setHasSearched(true);
+          })
+          .catch((err) => {
+            if (cancelled) return;
+            setError(err.status === 404 ? '历史报告不存在或无权访问' : (err.message || '加载历史报告失败'));
+          });
       })
       .catch(() => {
         if (!cancelled) setMe(null);
@@ -142,9 +164,9 @@ export default function App() {
   })();
 
   return (
-    <Box sx={{ minHeight: '100vh', py: { xs: 2, md: 4 }, backgroundColor: '#f4f6f9' }}>
+    <Box sx={{ minHeight: '100vh', pt: { xs: 3, md: 5 }, pb: { xs: 2, md: 4 }, backgroundColor: '#f4f6f9' }}>
       <Container maxWidth="lg">
-        {/* 顶部工具栏：左侧返回首页按钮 + 右侧数据库版本标签 */}
+        {/* 顶部工具栏：左侧返回箭头 + 右侧数据库版本标签 */}
         <Box
           sx={{
             display: 'flex',
@@ -154,23 +176,18 @@ export default function App() {
             mb: { xs: 1, md: 1.5 },
           }}
         >
-          <Button
+          <IconButton
             size="small"
-            startIcon={<HomeIcon sx={{ fontSize: 16 }} />}
             onClick={handleBackHome}
+            aria-label="返回首页"
             sx={{
               color: '#64748b',
-              fontSize: { xs: '0.7rem', md: '0.75rem' },
-              fontWeight: 500,
-              textTransform: 'none',
-              minWidth: 0,
-              px: 1,
-              py: 0.25,
+              p: 0.5,
               '&:hover': { backgroundColor: 'rgba(30,58,95,0.06)', color: '#1e3a5f' },
             }}
           >
-            返回首页
-          </Button>
+            <ArrowBackIcon sx={{ fontSize: 20 }} />
+          </IconButton>
           <Box
             component="span"
             sx={{
@@ -229,7 +246,36 @@ export default function App() {
           </Typography>
         </Box>
 
-        <SearchForm onSearch={handleSearch} loading={loading} />
+        {historyMode ? (
+          <Box
+            className="glass-card"
+            sx={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              gap: 1.5, px: { xs: 2, md: 2.5 }, py: { xs: 1.25, md: 1.5 }, mb: 2,
+              border: '1px solid rgba(30,58,95,0.10)',
+            }}
+          >
+            <Box sx={{ minWidth: 0 }}>
+              <Typography sx={{ fontSize: { xs: '0.85rem', md: '0.95rem' }, fontWeight: 600, color: '#1e3a5f', lineHeight: 1.35 }}>
+                历史报告 · {queryParams.position || '—'} · {queryParams.company || '—'}
+              </Typography>
+              <Typography sx={{ fontSize: '0.72rem', color: '#64748b', mt: 0.4 }}>
+                {queryParams.city} · {queryParams.rank} · {queryParams.education}
+                {historyCreatedAt ? ` · 查询于 ${new Date(historyCreatedAt).toLocaleString('zh-CN', { hour12: false })}` : ''}
+              </Typography>
+            </Box>
+            <Button
+              size="small"
+              variant="outlined"
+              onClick={handleBackHome}
+              sx={{ flexShrink: 0, borderRadius: 2, textTransform: 'none', borderColor: 'rgba(30,58,95,0.3)', color: '#1e3a5f', fontSize: '0.78rem' }}
+            >
+              新查询
+            </Button>
+          </Box>
+        ) : (
+          <SearchForm onSearch={handleSearch} loading={loading} />
+        )}
 
         {loading && (
           <Box className="glass-card" sx={{ textAlign: 'center', py: 8, mt: 4 }}>
@@ -251,9 +297,16 @@ export default function App() {
 
         {report && !loading && !error && <SalaryReport report={report} isVip={isVip} />}
 
-        {!hasSearched && !loading && (
+        {!hasSearched && !loading && !historyMode && (
           <Box className="glass-card" sx={{ textAlign: 'center', py: 10, px: 4, mt: 4 }}>
             <Typography variant="h6" sx={{ color: 'text.secondary', fontSize: { xs: '1rem', md: '1.25rem' }, whiteSpace: 'nowrap' }}>填写条件，点击查询薪酬</Typography>
+          </Box>
+        )}
+
+        {historyMode && !report && !error && (
+          <Box className="glass-card" sx={{ textAlign: 'center', py: 6, mt: 2 }}>
+            <CircularProgress size={28} sx={{ color: '#1e3a5f' }} />
+            <Typography variant="body2" sx={{ color: 'text.secondary', mt: 1.5 }}>正在加载历史报告…</Typography>
           </Box>
         )}
       </Container>

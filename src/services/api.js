@@ -40,6 +40,11 @@ export async function fetchVipStatus() {
   }
 }
 
+// 历史报告：用 ATA100 历史列表里的 reportId 取出当时入库的完整 report JSON。
+export async function fetchHistoryReport(id) {
+  return await http('GET', `/me/history/salary/${id}`);
+}
+
 /**
  * 调用一次薪酬查询（服务端会同步入库）。
  * 兼容旧签名：`fetchSalaryData(position, company, rank, education, city)`

@@ -36,14 +36,14 @@ export default function MarketSection({ data, index, total }) {
   return (
     <SectionWrapper id="market" title="市场定位分析" index={index} total={total}>
       <div className="grid md:grid-cols-12 gap-4">
-        {/* 左侧：本岗位谈薪/提薪 6 个套路 */}
+        {/* 左侧：本岗位 8 个谈薪筹码（Top 20%）*/}
         <div
           className="md:col-span-5 rounded-lg p-4 flex flex-col"
           style={{ border: '1px solid var(--report-border)', background: 'oklch(0.985 0.006 240)' }}
         >
           <div className="flex items-center gap-1.5 mb-2" style={{ color: 'var(--cyan-700)' }}>
             <Users className="size-4" />
-            <span className="text-[12px] font-semibold">本岗位谈薪/提薪 6 个套路</span>
+            <span className="text-[12px] font-semibold">本岗位8个谈薪筹码(Top 20%)</span>
           </div>
           {data.highEarnerTraits ? (
             <p
@@ -54,7 +54,7 @@ export default function MarketSection({ data, index, total }) {
             </p>
           ) : (
             <p className="text-[12px] leading-relaxed flex-1" style={{ color: 'var(--report-ink-muted)' }}>
-              暂无该岗位的谈薪/提薪套路数据
+              暂无该岗位的谈薪筹码数据
             </p>
           )}
         </div>
