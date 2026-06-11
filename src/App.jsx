@@ -174,18 +174,34 @@ export default function App() {
           <Box
             component="span"
             sx={{
-              backgroundColor: '#1e3a5f',
-              color: '#fff',
-              fontSize: { xs: '0.625rem', md: '0.7rem' },
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 0.7,
+              px: 1.1,
+              py: 0.4,
+              borderRadius: 999,
+              background: '#ecfdf5',
+              border: '1px solid rgba(15,118,110,0.20)',
+              color: '#065f46',
+              fontSize: { xs: '0.65rem', md: '0.72rem' },
               fontWeight: 600,
-              px: 0.9,
-              py: 0.3,
-              borderRadius: '6px',
               lineHeight: 1.2,
+              letterSpacing: '0.01em',
               whiteSpace: 'nowrap',
-              letterSpacing: 0.5,
             }}
           >
+            <Box
+              component="span"
+              aria-hidden
+              sx={{
+                width: 6,
+                height: 6,
+                borderRadius: '50%',
+                background: '#10b981',
+                flexShrink: 0,
+                boxShadow: '0 0 0 3px rgba(16, 185, 129, 0.18)',
+              }}
+            />
             大数据库版本 {dbVersion}
           </Box>
         </Box>
