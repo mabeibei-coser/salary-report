@@ -163,11 +163,15 @@ app.post(
     const startedAt = Date.now();
     let report = null;
 
-    // 主模型
-    try {
-      report = await callLLM({ url: PRIMARY_URL, apiKey: PRIMARY_KEY, model: PRIMARY_MODEL, messages });
-    } catch (primaryErr) {
-      console.error("[queries] 主模型失败:", primaryErr?.message || primaryErr);
+    // 主模型：坏 JSON 自动重试一次（讯飞偶发吐坏 JSON，重试通常即好）；
+    // 超时 / HTTP 错不重试，避免再白等一个 90s。
+    for (let attempt = 1; attempt <= 2 && !report; attempt++) {
+      try {
+        report = await callLLM({ url: PRIMARY_URL, apiKey: PRIMARY_KEY, model: PRIMARY_MODEL, messages });
+      } catch (primaryErr) {
+        console.error(`[queries] 主模型失败(第${attempt}次):`, primaryErr?.message || primaryErr);
+        if (primaryErr?.kind !== "parse") break;
+      }
     }
 
     // 备用模型（仅当主失败且备用 env 配齐时）
@@ -181,6 +185,17 @@ app.post(
 
     if (!report) {
       return res.status(504).json({ error: "查询超时，请重试" });
+    }
+
+    // 年薪在服务端按「月薪 ×（12 + 年终奖月数）」算出，保证与月薪自洽
+    // （ladder 瘦身后不再让讯飞各自生成年薪；讯飞自算的年薪常与月薪差几个百分点）
+    if (report?.monthly && report?.bonusMonths) {
+      const annualBy = (p) => {
+        const m = report.monthly[p];
+        const months = 12 + (report.bonusMonths[p] ?? report.bonusMonths.p50 ?? 0);
+        return Number.isFinite(m) ? Math.round((m * months) / 100) * 100 : report.annual?.[p];
+      };
+      report.annual = { p25: annualBy("p25"), p50: annualBy("p50"), p75: annualBy("p75") };
     }
 
     const durationMs = Date.now() - startedAt;
@@ -206,7 +221,7 @@ app.post(
 
 // 调用一个 LLM endpoint，返回解析后的 JSON 报告。
 // 质检只剩一项：返回内容必须能 JSON.parse。任何环节失败都抛异常，由外层决定是否走备用模型。
-async function callLLM({ url, apiKey, model, messages }, timeoutMs = 60_000) {
+async function callLLM({ url, apiKey, model, messages }, timeoutMs = 90_000) {
   const upstream = await fetch(url, {
     method: "POST",
     headers: {
@@ -227,7 +242,13 @@ async function callLLM({ url, apiKey, model, messages }, timeoutMs = 60_000) {
   if (cleaned.startsWith("```")) {
     cleaned = cleaned.replace(/^```(?:json)?\s*\n?/, "").replace(/\n?```\s*$/, "");
   }
-  return JSON.parse(cleaned);
+  try {
+    return JSON.parse(cleaned);
+  } catch {
+    const err = new Error("AI 返回内容不是有效 JSON");
+    err.kind = "parse"; // 标记为坏 JSON，供外层决定是否重试
+    throw err;
+  }
 }
 
 // ── 生产模式：托管 dist/ 静态资源 ──
@@ -261,7 +282,7 @@ const SYSTEM_PROMPT = `你是一位资深的中国薪酬数据分析专家。你
   "rankCategory": "tech或mgmt",
   "education": "学历",
   "city": "城市",
-  "rankLadder": [{"rank": "职级代码", "rankLabel": "职级标签（同上，必须严格逐字复制白名单）", "category": "tech或mgmt", "monthly": 月薪p50, "annual": 年薪p50}],
+  "rankLadder": [{"rank": "职级代码", "monthly": 月薪p50}],
   "monthly": {"p25": 月薪, "p50": 月薪, "p75": 月薪},
   "annual": {"p25": 年薪, "p50": 年薪, "p75": 年薪},
   "bonusMonths": {"p25": 月数, "p50": 月数, "p75": 月数},
@@ -275,7 +296,7 @@ const SYSTEM_PROMPT = `你是一位资深的中国薪酬数据分析专家。你
   "highEarnerTraits": "该岗位较高薪资人群的特点描述，250字以内"
 }
 
-## 职级标签白名单（rankLabel / rankLadder[].rankLabel 必须严格逐字复制下列字符串，不许新增/删除/替换任何字符，不许重组括号内容）
+## 职级标签白名单（顶层 rankLabel 必须严格逐字复制下列字符串，不许新增/删除/替换任何字符，不许重组括号内容）
 
 技术序列（category 必须为 "tech"）：
 - P1 → "P1(文员/助理)"
@@ -305,19 +326,19 @@ const SYSTEM_PROMPT = `你是一位资深的中国薪酬数据分析专家。你
 
 ### 第一步：先生成 rankLadder 全职级薪酬锚定表
 
-仅基于【岗位 + 最高学历 + 企业性质 + 所在城市】四个参数（**暂不考虑用户选择的职级**），按下方"职级具体化描述"，推理出该岗位在该企业性质 + 该学历 + 该城市层级下，从 P1 到 P9、M1 到 M5 共 14 个职级各自的月薪中位数（p50）与年薪中位数（p50）。
+仅基于【岗位 + 最高学历 + 企业性质 + 所在城市】四个参数（**暂不考虑用户选择的职级**），按下方"职级具体化描述"，推理出该岗位在该企业性质 + 该学历 + 该城市层级下，从 P1 到 P9、M1 到 M5 共 14 个职级各自的月薪中位数（p50）。
 
 填入 JSON 的 rankLadder 字段，要求：
 - **必须 14 条**，顺序固定：P1, P2, P3, P4, P5, P6, P7, P8, P9, M1, M2, M3, M4, M5
-- rank 字段填职级代码（如"P5"），rankLabel 填该职级的完整标签（如"P5(资深/工程师)"），category 填 "tech"（P 序列）或 "mgmt"（M 序列）
-- monthly、annual 都是正整数，单位元，精确到百元
+- ladder 每行只保留 rank 和 monthly 两个字段（不要 rankLabel / category）；rank 填职级代码（如"P5"）
+- monthly 是正整数，单位元，精确到百元
 - **P1→P9 严格单调递增**；**M1→M5 严格单调递增**
 - 管理岗略高于同档 P 序列：M1≈P4×1.08-1.15、M2≈P5×1.05-1.12、M3≈P6×1.0-1.10、M4≈P7×1.10-1.20、M5≈P8×1.10-1.20
 - 整张表的薪酬基准已经把"岗位 + 企业性质系数 + 学历加成 + 城市层级"全部计算进去；后续第二步不再重复套这些系数
 
 ### 第二步：从 rankLadder 摘取用户选择的职级数据
 
-从第一步生成的 rankLadder 中找到用户选择的职级，取出其 monthly 作为本报告的 monthly.p50、annual 作为 annual.p50。**monthly.p50 必须严格等于 rankLadder 对应行的 monthly；annual.p50 必须严格等于 rankLadder 对应行的 annual**（保证报告与锚定表自洽）。
+从第一步生成的 rankLadder 中找到用户选择的职级，取出其 monthly 作为本报告的 monthly.p50。**monthly.p50 必须严格等于 rankLadder 对应行的 monthly**。annual.p50 = monthly.p50 ×（12 + bonusMonths.p50），保持与月薪自洽。
 
 再按 spread = 18%-32%（视行业波动幅度）反推：
 - monthly.p25 = round(monthly.p50 × (1 - spread × 0.45) / 100) × 100

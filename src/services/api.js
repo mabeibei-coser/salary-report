@@ -47,7 +47,7 @@ export async function fetchVipStatus() {
  */
 export async function fetchSalaryData(position, company, rank, education, city) {
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 65_000);
+  const timeoutId = setTimeout(() => controller.abort(), 95_000);
   try {
     const res = await fetch(`${API_BASE}/queries`, {
       method: 'POST',
@@ -67,7 +67,7 @@ export async function fetchSalaryData(position, company, rank, education, city) 
   } catch (err) {
     clearTimeout(timeoutId);
     if (err.name === 'AbortError') {
-      throw new Error('请求超时（60秒），请稍后重试');
+      throw new Error('请求超时（90秒），请稍后重试');
     }
     throw err;
   }
