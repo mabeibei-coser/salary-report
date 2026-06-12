@@ -224,7 +224,7 @@ export default function App() {
         </Box>
 
         {/* 标题区 */}
-        <Box sx={{ textAlign: 'center', mb: { xs: 1.5, md: 2 } }}>
+        <Box sx={{ textAlign: 'center', mb: { xs: 3, md: 3.5 } }}>
           <Box sx={{ display: 'inline-flex', alignItems: 'flex-start', gap: 1 }}>
             <Typography
               variant="h3"
