@@ -5,8 +5,63 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import SearchForm from './components/SearchForm';
 import SalaryReport from './components/SalaryReport';
 import { fetchSalaryData, fetchMe, fetchVipStatus, fetchHistoryReport } from './services/api';
+import mobileHomeBg from './assets/mobile-home-bg.png';
 
 const CENTER_URL = import.meta.env.VITE_CENTER_URL || 'http://localhost:4004/';
+
+function MobileHome({ onBackHome, onOpenSearch }) {
+  const tapAreaSx = {
+    position: 'absolute',
+    p: 0,
+    border: 0,
+    borderRadius: 2,
+    background: 'transparent',
+    cursor: 'pointer',
+    WebkitTapHighlightColor: 'transparent',
+  };
+
+  return (
+    <Box
+      sx={{
+        minHeight: '100dvh',
+        bgcolor: '#fff',
+        overflow: 'hidden',
+      }}
+    >
+      <Box
+        sx={{
+          position: 'relative',
+          width: '100%',
+          height: 'calc(100vw * 1852 / 854)',
+          minHeight: '100dvh',
+          backgroundImage: `url(${mobileHomeBg})`,
+          backgroundSize: '100% auto',
+          backgroundRepeat: 'no-repeat',
+          backgroundPosition: 'top center',
+        }}
+      >
+        <Box
+          component="button"
+          aria-label="返回"
+          onClick={onBackHome}
+          sx={{ ...tapAreaSx, left: '3.5%', top: '2.2%', width: '10%', height: '5.2%' }}
+        />
+        <Box
+          component="button"
+          aria-label="薪资查询"
+          onClick={onOpenSearch}
+          sx={{ ...tapAreaSx, left: '5.5%', top: '47.4%', width: '89%', height: '12.8%' }}
+        />
+        <Box
+          component="button"
+          aria-label="岗位全景"
+          onClick={onOpenSearch}
+          sx={{ ...tapAreaSx, left: '5.5%', top: '62.0%', width: '89%', height: '12.4%' }}
+        />
+      </Box>
+    </Box>
+  );
+}
 
 export default function App() {
   const [me, setMe] = useState(null);
@@ -18,6 +73,7 @@ export default function App() {
   const [hasSearched, setHasSearched] = useState(false);
   const [queryParams, setQueryParams] = useState({ position: '', company: '', rank: '', education: '', city: '' });
   const [countdown, setCountdown] = useState(45);
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   // 历史报告深链模式：?historyId=xxx 进来时跳过搜索表单，直接渲染当时入库的报告
   const [historyMode, setHistoryMode] = useState(false);
   const [historyCreatedAt, setHistoryCreatedAt] = useState(null);
@@ -117,6 +173,11 @@ export default function App() {
     window.location.href = CENTER_URL;
   };
 
+  const handleMobileSearchOpen = () => {
+    setMobileSearchOpen(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   if (!meReady) {
     return (
       <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f4f6f9' }}>
@@ -163,9 +224,17 @@ export default function App() {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
   })();
 
+  const showMobileHome = !historyMode && !hasSearched && !loading && !error && !report && !mobileSearchOpen;
+
   return (
-    <Box sx={{ minHeight: '100vh', pt: { xs: 3, md: 5 }, pb: { xs: 2, md: 4 }, backgroundColor: '#f4f6f9' }}>
-      <Container maxWidth="lg">
+    <Box sx={{ minHeight: '100vh', pt: { xs: showMobileHome ? 0 : 3, md: 5 }, pb: { xs: showMobileHome ? 0 : 2, md: 4 }, backgroundColor: '#f4f6f9' }}>
+      {showMobileHome && (
+        <Box sx={{ display: { xs: 'block', md: 'none' } }}>
+          <MobileHome onBackHome={handleBackHome} onOpenSearch={handleMobileSearchOpen} />
+        </Box>
+      )}
+
+      <Container maxWidth="lg" sx={{ display: { xs: showMobileHome ? 'none' : 'block', md: 'block' } }}>
         {/* 顶部工具栏：左侧返回箭头 + 右侧数据库版本标签 */}
         <Box
           sx={{
@@ -178,7 +247,7 @@ export default function App() {
         >
           <IconButton
             size="small"
-            onClick={handleBackHome}
+            onClick={mobileSearchOpen ? () => setMobileSearchOpen(false) : handleBackHome}
             aria-label="返回首页"
             sx={{
               color: '#64748b',
@@ -311,7 +380,7 @@ export default function App() {
         )}
       </Container>
 
-      <Box component="footer" sx={{ textAlign: 'center', py: 3, mt: 6, borderTop: '1px solid rgba(0,0,0,0.05)' }}>
+      <Box component="footer" sx={{ display: { xs: showMobileHome ? 'none' : 'block', md: 'block' }, textAlign: 'center', py: 3, mt: 6, borderTop: '1px solid rgba(0,0,0,0.05)' }}>
         <Typography variant="caption" sx={{ color: '#94a3b8' }}>2026岗位薪资查询平台  ·  数据由谨世智能大数据实验室提供  ·  仅供参考</Typography>
       </Box>
     </Box>
