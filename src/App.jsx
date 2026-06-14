@@ -164,7 +164,7 @@ export default function App() {
   })();
 
   return (
-    <Box sx={{ minHeight: '100vh', pt: { xs: 3, md: 5 }, pb: { xs: 2, md: 4 }, backgroundColor: '#f4f6f9' }}>
+    <Box sx={{ minHeight: '100vh', pt: { xs: 1.5, md: 3 }, pb: { xs: 2, md: 4 }, backgroundColor: '#f4f6f9' }}>
       <Container maxWidth="lg">
         {/* 顶部工具栏：左侧返回箭头 + 右侧数据库版本标签 */}
         <Box
@@ -298,7 +298,7 @@ export default function App() {
         {report && !loading && !error && <SalaryReport report={report} isVip={isVip} />}
 
         {!hasSearched && !loading && !historyMode && (
-          <Box className="glass-card" sx={{ textAlign: 'center', py: 10, px: 4, mt: 4 }}>
+          <Box className="glass-card" sx={{ textAlign: 'center', py: 10, px: 4, mt: 2 }}>
             <Typography variant="h6" sx={{ color: 'text.secondary', fontSize: { xs: '1rem', md: '1.25rem' }, whiteSpace: 'nowrap' }}>填写条件，点击查询薪酬</Typography>
           </Box>
         )}
