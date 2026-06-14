@@ -312,7 +312,7 @@ export default function App() {
       </Container>
 
       <Box component="footer" sx={{ textAlign: 'center', py: { xs: 1.75, md: 2.5 }, mt: { xs: 2.5, md: 5 }, borderTop: '1px solid rgba(0,0,0,0.05)' }}>
-        <Typography variant="caption" sx={{ color: '#94a3b8' }}>2026岗位薪资查询平台  ·  数据由谨世智能大数据实验室提供  ·  仅供参考</Typography>
+        <Typography variant="caption" sx={{ color: '#94a3b8' }}>岗位薪资查询平台  ·  数据由谨世智能大数据实验室提供  ·  仅供参考</Typography>
       </Box>
     </Box>
   );
