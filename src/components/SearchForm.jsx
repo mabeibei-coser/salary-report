@@ -44,11 +44,11 @@ export default function SearchForm({ onSearch, loading = false }) {
       onSubmit={handleSubmit}
       className="glass-card"
       sx={{
-        p: { xs: 2.5, md: 3 },
-        mb: 2,
+        p: { xs: 2, md: 2.75 },
+        mb: { xs: 1.5, md: 2 },
         display: 'flex',
         flexDirection: { xs: 'column', md: 'row' },
-        gap: 2,
+        gap: { xs: 1.5, md: 2 },
         alignItems: { xs: 'stretch', md: 'flex-end' },
         flexWrap: 'wrap',
       }}
@@ -62,7 +62,7 @@ export default function SearchForm({ onSearch, loading = false }) {
           disabled={loading}
           placeholder="如：Java工程师、产品经理"
           fullWidth
-          inputProps={{ sx: { py: 1.5 } }}
+          inputProps={{ sx: { py: 1.25 } }}
         />
       </FormControl>
 
@@ -174,7 +174,7 @@ export default function SearchForm({ onSearch, loading = false }) {
         sx={{
           flex: { xs: '1 1 100%', md: '0 0 auto' },
           minWidth: { xs: '100%', md: 140 },
-          py: 1.5,
+          py: 1.25,
           background: isValid && !loading
             ? '#1e3a5f'
             : 'rgba(0,0,0,0.04)',

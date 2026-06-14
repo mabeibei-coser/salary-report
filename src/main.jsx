@@ -39,7 +39,7 @@ const lightTheme = createTheme({
     },
     MuiSelect: {
       styleOverrides: {
-        select: { paddingTop: 12, paddingBottom: 12 },
+        select: { paddingTop: 10, paddingBottom: 10 },
         icon: { color: 'rgba(0, 0, 0, 0.4)' },
       },
     },

@@ -164,7 +164,7 @@ export default function App() {
   })();
 
   return (
-    <Box sx={{ minHeight: '100vh', pt: { xs: 1.5, md: 3 }, pb: { xs: 2, md: 4 }, backgroundColor: '#f4f6f9' }}>
+    <Box sx={{ minHeight: '100vh', pt: { xs: 1, md: 2.5 }, pb: { xs: 2, md: 4 }, backgroundColor: '#f4f6f9' }}>
       <Container maxWidth="lg">
         {/* 顶部工具栏：左侧返回箭头 + 右侧数据库版本标签 */}
         <Box
@@ -172,8 +172,8 @@ export default function App() {
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            mt: { xs: 0.5, md: 1 },
-            mb: { xs: 1, md: 1.5 },
+            mt: 0,
+            mb: { xs: 0.75, md: 1 },
           }}
         >
           <IconButton
@@ -224,7 +224,7 @@ export default function App() {
         </Box>
 
         {/* 标题区 */}
-        <Box sx={{ textAlign: 'center', mb: { xs: 3, md: 3.5 } }}>
+        <Box sx={{ textAlign: 'center', mb: { xs: 1.5, md: 2.5 } }}>
           <Box sx={{ display: 'inline-flex', alignItems: 'flex-start', gap: 1 }}>
             <Typography
               variant="h3"
@@ -298,8 +298,8 @@ export default function App() {
         {report && !loading && !error && <SalaryReport report={report} isVip={isVip} />}
 
         {!hasSearched && !loading && !historyMode && (
-          <Box className="glass-card" sx={{ textAlign: 'center', py: 10, px: 4, mt: 2 }}>
-            <Typography variant="h6" sx={{ color: 'text.secondary', fontSize: { xs: '1rem', md: '1.25rem' }, whiteSpace: 'nowrap' }}>填写条件，点击查询薪酬</Typography>
+          <Box className="glass-card" sx={{ textAlign: 'center', py: { xs: 2.5, md: 4 }, px: 3, mt: { xs: 1.25, md: 2 } }}>
+            <Typography sx={{ color: 'text.secondary', fontSize: { xs: '0.9rem', md: '1.05rem' }, fontWeight: 500, whiteSpace: 'nowrap' }}>填写条件，点击查询薪酬</Typography>
           </Box>
         )}
 
@@ -311,7 +311,7 @@ export default function App() {
         )}
       </Container>
 
-      <Box component="footer" sx={{ textAlign: 'center', py: 3, mt: 6, borderTop: '1px solid rgba(0,0,0,0.05)' }}>
+      <Box component="footer" sx={{ textAlign: 'center', py: { xs: 1.75, md: 2.5 }, mt: { xs: 2.5, md: 5 }, borderTop: '1px solid rgba(0,0,0,0.05)' }}>
         <Typography variant="caption" sx={{ color: '#94a3b8' }}>2026岗位薪资查询平台  ·  数据由谨世智能大数据实验室提供  ·  仅供参考</Typography>
       </Box>
     </Box>
