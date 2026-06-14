@@ -224,7 +224,7 @@ export default function App() {
         </Box>
 
         {/* 标题区 */}
-        <Box sx={{ textAlign: 'center', mb: { xs: 1.5, md: 2.5 } }}>
+        <Box sx={{ textAlign: 'center', mt: { xs: 2, md: 2.5 }, mb: { xs: 1.5, md: 2.5 } }}>
           <Box sx={{ display: 'inline-flex', alignItems: 'flex-start', gap: 1 }}>
             <Typography
               variant="h3"
@@ -298,7 +298,18 @@ export default function App() {
         {report && !loading && !error && <SalaryReport report={report} isVip={isVip} />}
 
         {!hasSearched && !loading && !historyMode && (
-          <Box className="glass-card" sx={{ textAlign: 'center', py: { xs: 2.5, md: 4 }, px: 3, mt: { xs: 1.25, md: 2 } }}>
+          <Box
+            className="glass-card"
+            sx={{
+              textAlign: 'center',
+              minHeight: { xs: 180, md: 216 },
+              px: 3,
+              mt: { xs: 1.25, md: 2 },
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
             <Typography sx={{ color: 'text.secondary', fontSize: { xs: '0.9rem', md: '1.05rem' }, fontWeight: 500, whiteSpace: 'nowrap' }}>填写条件，点击查询薪酬</Typography>
           </Box>
         )}
