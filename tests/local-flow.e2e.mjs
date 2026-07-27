@@ -12,8 +12,8 @@ import { getIronSession } from "iron-session";
 
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const localKey = "d32-local-banana-placeholder";
-const oldIflytekCanary = "d32-old-iflytek-must-not-be-read";
-const oldViteCanary = "d32-old-vite-must-not-be-read";
+const oldIflytek = "old-iflytek";
+const oldVite = "old-vite";
 const sessionPassword = "d32-local-ata-session-password-at-least-32-characters";
 const phone = "13800000000";
 const fixedQuery = {
@@ -172,8 +172,8 @@ async function main() {
         BANANAROUTER_API_KEY: localKey,
         BANANAROUTER_BASE_URL: `http://127.0.0.1:${providerPort}`,
         BANANAROUTER_MODEL: "gemini-json-test",
-        IFLYTEK_API_KEY: oldIflytekCanary,
-        VITE_GLM_API_KEY: oldViteCanary,
+        IFLYTEK_API_KEY: oldIflytek,
+        VITE_GLM_API_KEY: oldVite,
         BACKUP_API_URL: "",
         BACKUP_API_KEY: "",
         BACKUP_MODEL: "",
@@ -223,8 +223,8 @@ async function main() {
     for (const request of providerRequests) {
       assert.equal(request.url, "/v1beta/models/gemini-json-test:generateContent");
       assert.equal(request.headers.authorization, `Bearer ${localKey}`);
-      assert.notEqual(request.headers.authorization, `Bearer ${oldIflytekCanary}`);
-      assert.notEqual(request.headers.authorization, `Bearer ${oldViteCanary}`);
+      assert.notEqual(request.headers.authorization, `Bearer ${oldIflytek}`);
+      assert.notEqual(request.headers.authorization, `Bearer ${oldVite}`);
       assert.match(request.body.systemInstruction.parts[0].text, /薪酬数据分析专家/);
       assert.match(request.body.contents[0].parts[0].text, /岗位名称：薪酬专员/);
     }
@@ -271,8 +271,8 @@ async function main() {
     const combinedLogs = `${logs.stdout}\n${logs.stderr}`;
     for (const forbidden of [
       localKey,
-      oldIflytekCanary,
-      oldViteCanary,
+      oldIflytek,
+      oldVite,
       fixedQuery.position,
       validReport.highEarnerTraits,
       "Authorization",
@@ -286,7 +286,7 @@ async function main() {
       .readdirSync(path.join(projectRoot, "dist", "assets"))
       .map((name) => fs.readFileSync(path.join(projectRoot, "dist", "assets", name), "utf8"))
       .join("\n");
-    for (const forbidden of [localKey, oldIflytekCanary, oldViteCanary, fixedQuery.position]) {
+    for (const forbidden of [localKey, oldIflytek, oldVite, fixedQuery.position]) {
       assert.equal(distText.includes(forbidden), false);
     }
 
