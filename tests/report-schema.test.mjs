@@ -29,9 +29,10 @@ function makePositionProfile() {
       evidence: `业绩证据 ${i + 1}`,
     })),
     candidateTrend: {
-      trends: Array.from({ length: 3 }, (_, i) => ({
+      trends: ["数量与层次", "技能与证据", "来源与流动"].map((category, i) => ({
+        category,
         title: `供给趋势 ${i + 1}`,
-        analysis: `近三年该岗位人才供给结构变化 ${i + 1}`,
+        supplyAnalysis: `近三年该岗位人才供给结构变化 ${i + 1}`,
       })),
     },
   };
@@ -85,6 +86,13 @@ test("人选趋势拒绝按年份拆分的旧结构", () => {
     years: [2024, 2025, 2026].map((year) => ({ year, demand: "稳定", profileShift: "变化" })),
     interpretation: "逐年解读",
   };
+  assert.equal(hasRequiredReportShape(report), false);
+});
+
+test("人选趋势拒绝需求侧和招聘偏好表述", () => {
+  const report = makeReport();
+  report.positionProfile.candidateTrend.trends[0].title = "复合人才需求激增";
+  report.positionProfile.candidateTrend.trends[0].supplyAnalysis = "企业更倾向招聘复合型候选人";
   assert.equal(hasRequiredReportShape(report), false);
 });
 

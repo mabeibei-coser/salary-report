@@ -38,7 +38,11 @@
         "okrDesign": [{"objective": "目标O，共2个", "keyResults": ["KR1", "KR2", "KR3"]}],
         "innovationAchievements": [{"title": "创新方向", "evidence": "可验证的创新业绩表现"}],
         "candidateTrend": {
-          "trends": [{"title": "供给侧趋势标题，共3条", "analysis": "近3年该岗位人才供给侧的结构性变化"}]
+          "trends": [
+            {"category": "数量与层次", "title": "供给判断", "supplyAnalysis": "近3年市场上可获得人选的数量与职级层次变化"},
+            {"category": "技能与证据", "title": "供给判断", "supplyAnalysis": "近3年候选人的技能组合、经验深度与成果证据变化"},
+            {"category": "来源与流动", "title": "供给判断", "supplyAnalysis": "近3年人才来源、跨界迁移与地域流动变化"}
+          ]
         }
       }
     }
@@ -169,8 +173,9 @@
     - coreKpis 必须刚好 5 项，每项包含 name、metric、target；target 是建议目标，不得冒充企业真实指标。
     - okrDesign 必须刚好 2 个 Objective，每个必须刚好 3 个 Key Result；KR 可衡量、可验证。
     - innovationAchievements 必须刚好 4 项，每项包含 title 和 evidence；至少 2 项体现未来 2-3 年的新工具、新流程或新业务模式；这是业绩标杆示例，不得声称人选已取得成果。
-    - candidateTrend.trends 必须刚好 3 条，只从人才供给侧汇总近 3 年结构变化，不按 2024/2025/2026 分年，不得出现 year/years 字段；每条包含 title（6-12字）和 analysis（45-90字），优先覆盖人才数量与层次、技能经验与成果证据、人才来源与流动。
-    - 人选趋势不得改写成企业需求或招聘偏好，只做方向性市场研判；禁止虚构招聘人数、简历样本量、精确占比或引用不存在的调研机构。
+    - candidateTrend.trends 必须刚好 3 条，只从人才供给侧汇总近 3 年结构变化，不按 2024/2025/2026 分年，不得出现 year/years 字段；每条包含 category、title（6-12字）和 supplyAnalysis（45-90字）。category 必须按顺序逐字使用“数量与层次”“技能与证据”“来源与流动”。
+    - 每条的主语只能是市场上的候选人、从业者或人才供给，回答什么人变多或变少、什么能力和成果证据稀缺、人才从哪里转入转出。title 和 supplyAnalysis 禁止出现“需求、招聘、企业、用人、雇主、偏好、岗位空缺、职位空缺、更受青睐、用工缺口”等需求侧表述；命中任一禁词必须改写。
+    - 人选趋势只做方向性市场研判，禁止虚构招聘人数、简历样本量、精确占比或引用不存在的调研机构。
 
 - role: user
   content: |

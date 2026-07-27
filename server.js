@@ -349,7 +349,11 @@ const SYSTEM_PROMPT = `你是一位资深的中国薪酬数据分析专家。你
     "okrDesign": [{"objective": "目标O，共2个", "keyResults": ["KR1", "KR2", "KR3"]}],
     "innovationAchievements": [{"title": "创新方向", "evidence": "可验证的创新业绩表现"}],
     "candidateTrend": {
-      "trends": [{"title": "供给侧趋势标题，共3条", "analysis": "近3年该岗位人才供给侧的结构性变化"}]
+      "trends": [
+        {"category": "数量与层次", "title": "供给判断", "supplyAnalysis": "近3年市场上可获得人选的数量与职级层次变化"},
+        {"category": "技能与证据", "title": "供给判断", "supplyAnalysis": "近3年候选人的技能组合、经验深度与成果证据变化"},
+        {"category": "来源与流动", "title": "供给判断", "supplyAnalysis": "近3年人才来源、跨界迁移与地域流动变化"}
+      ]
     }
   }
 }
@@ -484,7 +488,8 @@ const SYSTEM_PROMPT = `你是一位资深的中国薪酬数据分析专家。你
 - **coreKpis 核心 KPI**：必须刚好 5 项；每项包含 name、metric、target。metric 写清衡量口径，target 给出合理的建议目标或区间；目标必须与岗位、企业性质和职级相称。不得把建议目标描述成用户当前企业的真实指标。
 - **okrDesign OKR 设计**：必须刚好 2 个 Objective；每个 Objective 必须刚好 3 个 Key Result。O 写结果方向，KR 必须可衡量、可在一个年度或季度内验证，不得与 KPI 简单重复。
 - **innovationAchievements 创新业绩表现**：必须刚好 4 项；每项包含 title 和 evidence，描述该岗位领先于常规做法的创新成果，以及应拿出什么量化证据；至少 2 项要体现未来 2-3 年的新工具、新流程或新业务模式。这是业绩标杆示例，不得声称具体人选已经取得这些成果。
-- **candidateTrend 近3年人选趋势解读**：只从人才供给侧汇总近 3 年的结构变化，trends 必须刚好 3 条，不按 2024/2025/2026 分年，不得出现 year/years 字段。每条包含 title（6-12字鲜明趋势判断）和 analysis（45-90字岗位定制解读）。3 点分别优先覆盖：①可获得人才的数量与层次结构；②技能、经验和成果证据的供给变化；③人才来源、跨界迁移或地域流动变化。不得改写成企业需求、招聘偏好或逐年行情。
+- **candidateTrend 近3年人选趋势解读**：只从人才供给侧汇总近 3 年的结构变化，trends 必须刚好 3 条，不按 2024/2025/2026 分年，不得出现 year/years 字段。每条必须包含 category、title（6-12字鲜明供给判断）和 supplyAnalysis（45-90字岗位定制解读）。category 必须按顺序逐字使用“数量与层次”“技能与证据”“来源与流动”，不得替换或调序。
+- **供给侧硬规则**：每条的主语只能是“市场上的候选人 / 从业者 / 人才供给”，回答“市场上什么人变多或变少、什么能力与成果证据稀缺、人才从哪里转入转出”。title 和 supplyAnalysis 禁止出现“需求、招聘、企业、用人、雇主、偏好、岗位空缺、职位空缺、更受青睐、用工缺口”等需求侧表述。写完必须逐条自检，命中任一禁词就改写。
 - **趋势事实边界**：人选趋势仅做方向性市场研判。没有可靠样本时禁止虚构招聘人数、简历样本量、精确占比或引用不存在的调研机构。`;
 
 function buildUserMessage({ position, company, rank, education, city }) {
@@ -503,7 +508,7 @@ function validateRequiredReportShape(report) {
   if (hasRequiredReportShape(report)) return;
   const error = new BananaRouterJsonError(
     "schema_invalid",
-    "BananaRouter 返回的报告结构不完整",
+    "BananaRouter 返回的报告结构或供给侧口径不合格",
     "parse",
   );
   throw error;

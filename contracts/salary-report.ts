@@ -64,7 +64,11 @@ export interface PositionProfile {
   okrDesign: { objective: string; keyResults: string[] }[];
   innovationAchievements: { title: string; evidence: string }[];
   candidateTrend: {
-    trends: { title: string; analysis: string }[];
+    trends: {
+      category: "数量与层次" | "技能与证据" | "来源与流动";
+      title: string;
+      supplyAnalysis: string;
+    }[];
   };
 }
 

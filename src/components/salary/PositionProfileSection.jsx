@@ -17,6 +17,8 @@ const PERSPECTIVE_META = [
   { field: 'futureOutlook', eyebrow: '创新前瞻', title: '未来 2–3 年将向哪里演进' },
 ];
 
+const SUPPLY_TREND_CATEGORIES = ['数量与层次', '技能与证据', '来源与流动'];
+
 function ModuleTitle({ type, note }) {
   const { icon: Icon, label } = MODULE_META[type];
   return (
@@ -57,7 +59,13 @@ export default function PositionProfileSection({ data, index, total, locked }) {
   const hasCurrentProfile =
     data?.jobPerspective &&
     Array.isArray(data?.candidateTrend?.trends) &&
-    data.candidateTrend.trends.length === 3;
+    data.candidateTrend.trends.length === 3 &&
+    data.candidateTrend.trends.every(
+      (item, itemIndex) =>
+        item?.category === SUPPLY_TREND_CATEGORIES[itemIndex] &&
+        typeof item?.supplyAnalysis === 'string' &&
+        item.supplyAnalysis.trim(),
+    );
 
   if (!hasCurrentProfile) {
     return (
@@ -176,10 +184,10 @@ export default function PositionProfileSection({ data, index, total, locked }) {
               {trendItems.map((item, itemIndex) => (
                 <div key={`${item.title}-${itemIndex}`} className="rounded-md bg-white p-3" style={{ border: '1px solid var(--report-border)' }}>
                   <div className="text-[9.5px] font-semibold tracking-[0.12em]" style={{ color: 'var(--cyan-600)' }}>
-                    趋势 {String(itemIndex + 1).padStart(2, '0')}
+                    趋势 {String(itemIndex + 1).padStart(2, '0')} · {item.category}
                   </div>
                   <div className="mt-1 text-[12px] font-semibold" style={{ color: 'var(--navy-900)' }}>{item.title}</div>
-                  <p className="text-[11px] leading-relaxed mt-2 mb-0" style={{ color: 'var(--report-ink-soft)' }}>{item.analysis}</p>
+                  <p className="text-[11px] leading-relaxed mt-2 mb-0" style={{ color: 'var(--report-ink-soft)' }}>{item.supplyAnalysis}</p>
                 </div>
               ))}
             </div>

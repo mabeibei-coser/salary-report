@@ -85,9 +85,9 @@ const validReport = {
     })),
     candidateTrend: {
       trends: [
-        { title: "执行型供给充足", analysis: "会算薪和维护台账的人选增多，但能独立处理复杂薪酬场景的成熟供给仍然有限。" },
-        { title: "复合能力仍稀缺", analysis: "同时具备数据分析、机制理解和系统落地经验的人选占比有限，成果证据分化明显。" },
-        { title: "跨界来源扩大", analysis: "人才来源从传统薪酬模块扩展到数据分析与人力系统岗位，技能组合更加多元。" },
+        { category: "数量与层次", title: "执行型供给充足", supplyAnalysis: "会算薪和维护台账的人选增多，但能独立处理复杂薪酬场景的成熟供给仍然有限。" },
+        { category: "技能与证据", title: "复合能力仍稀缺", supplyAnalysis: "同时具备数据分析、机制理解和系统落地经验的人选占比有限，成果证据分化明显。" },
+        { category: "来源与流动", title: "跨界来源扩大", supplyAnalysis: "人才来源从传统薪酬模块扩展到数据分析与人力系统岗位，技能组合更加多元。" },
       ],
     },
   },
@@ -258,6 +258,10 @@ async function main() {
     assert.equal(firstResult.report.rankLabel, "P4(高级专员/技术员)");
     assert.equal(firstResult.report.positionProfile.coreResponsibilities.length, 5);
     assert.equal(firstResult.report.positionProfile.candidateTrend.trends.length, 3);
+    assert.deepEqual(
+      firstResult.report.positionProfile.candidateTrend.trends.map((item) => item.category),
+      ["数量与层次", "技能与证据", "来源与流动"],
+    );
     assert.equal(firstResult.report.positionProfile.jobPerspective.uniqueInsight.length > 0, true);
     assert.equal(providerRequests.length, 2);
     for (const request of providerRequests) {
