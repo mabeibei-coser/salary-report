@@ -27,14 +27,18 @@
       "cityAnalysis": [{"city": "城市名", "monthlyAvg": 月薪均值, "costIndex": 生活成本指数(以北京=100), "salaryLevel": "高/中/低", "advantage": "该城市优势一句话"}],
       "highEarnerTraits": "该岗位 Top 20% 高薪人群的 8 个谈薪筹码，详见下方第 7 条",
       "positionProfile": {
+        "jobPerspective": {
+          "distinctivePosition": "对本岗位价值重心的鲜明判断",
+          "uniqueInsight": "区别于通用岗位说明的独到人才判断",
+          "futureOutlook": "未来2-3年的创新与演进判断"
+        },
         "coreResponsibilities": ["核心职责，共5条"],
         "coreCompetencies": [{"name": "能力名称", "description": "能力在该岗位中的具体表现"}],
         "coreKpis": [{"name": "KPI名称", "metric": "衡量口径", "target": "建议目标"}],
         "okrDesign": [{"objective": "目标O，共2个", "keyResults": ["KR1", "KR2", "KR3"]}],
         "innovationAchievements": [{"title": "创新方向", "evidence": "可验证的创新业绩表现"}],
         "candidateTrend": {
-          "years": [{"year": 2024, "demand": "需求趋势短标签", "profileShift": "该年人选要求变化"}],
-          "interpretation": "近3年人选趋势综合解读"
+          "trends": [{"title": "供给侧趋势标题，共3条", "analysis": "近3年该岗位人才供给侧的结构性变化"}]
         }
       }
     }
@@ -157,14 +161,16 @@
     - 总字数 260-340 字，紧凑、可立即落地
 
     ### 8. positionProfile 岗位画像（第5部分）
-    岗位画像必须同时结合【岗位 + 企业性质 + 职级 + 最高学历 + 城市】生成，内容用于招聘、面试和绩效沟通，不是通用岗位说明书：
+    岗位画像必须同时结合【岗位 + 企业性质 + 职级 + 最高学历 + 城市】生成，内容用于招聘、面试和绩效沟通，不是通用岗位说明书。先识别该岗位独有的价值链、关键矛盾和未来变化，再写下列内容：
+    - 强岗位定制硬规则：每条都要出现只有该岗位才成立的工作对象、专业动作、交付物、业务场景或衡量结果。把岗位名替换成另一个岗位后仍然成立的内容必须重写。禁止只写“沟通协作、持续学习、积极主动、提质增效、数字化转型”等通用词。
+    - jobPerspective 必须包含 distinctivePosition（鲜明定位）、uniqueInsight（独到判断）、futureOutlook（创新前瞻）3 个非空字段，每项 45-90 字，三项观点不得重复；分别给出价值优先级、人才分水岭和未来 2-3 年角色演进，不能只罗列事实或只写“使用 AI 提效”。
     - coreResponsibilities 必须刚好 5 条，每条写清该职级负责的对象、动作和结果。
     - coreCompetencies 必须刚好 5 项，每项包含 name 和 description，写可观察行为，避免空话。
     - coreKpis 必须刚好 5 项，每项包含 name、metric、target；target 是建议目标，不得冒充企业真实指标。
     - okrDesign 必须刚好 2 个 Objective，每个必须刚好 3 个 Key Result；KR 可衡量、可验证。
-    - innovationAchievements 必须刚好 4 项，每项包含 title 和 evidence；这是业绩标杆示例，不得声称人选已取得成果。
-    - candidateTrend.years 必须刚好 3 条，year 依次为 2024、2025、2026；每年包含 demand 和 profileShift；interpretation 综合解读三年变化。
-    - 人选趋势仅做方向性市场研判，禁止虚构招聘人数、简历样本量、精确占比或引用不存在的调研机构。
+    - innovationAchievements 必须刚好 4 项，每项包含 title 和 evidence；至少 2 项体现未来 2-3 年的新工具、新流程或新业务模式；这是业绩标杆示例，不得声称人选已取得成果。
+    - candidateTrend.trends 必须刚好 3 条，只从人才供给侧汇总近 3 年结构变化，不按 2024/2025/2026 分年，不得出现 year/years 字段；每条包含 title（6-12字）和 analysis（45-90字），优先覆盖人才数量与层次、技能经验与成果证据、人才来源与流动。
+    - 人选趋势不得改写成企业需求或招聘偏好，只做方向性市场研判；禁止虚构招聘人数、简历样本量、精确占比或引用不存在的调研机构。
 
 - role: user
   content: |
@@ -176,4 +182,4 @@
     - 所在城市：{{city}}
 
     请严格按系统提示的JSON格式返回完整数据，确保所有五项参数都体现在薪酬数据中。
-    不得省略任何数组项：rankLadder 必须14条、salaryTrend 必须5条、industryAnalysis 必须25条、cityAnalysis 必须6条；positionProfile 的职责/能力/KPI/OKR/创新业绩/三年趋势必须分别为5/5/5/2/4/3条。
+    不得省略任何数组项：rankLadder 必须14条、salaryTrend 必须5条、industryAnalysis 必须25条、cityAnalysis 必须6条；positionProfile 的岗位研判3项字段必须完整，职责/能力/KPI/OKR/创新业绩/供给侧趋势必须分别为5/5/5/2/4/3条。

@@ -139,22 +139,26 @@ defaultTest:
           ? true
           : `salaryIncrease 越界 (应 1.5%-6%): ${bad.slice(0,5).join(', ')}${bad.length > 5 ? ` …等共 ${bad.length} 条`: ''}`;
 
-    # 10. 岗位画像六个模块数量完整
+    # 10. 岗位画像观点字段和六个模块数量完整
     - type: javascript
       value: |
         const p = JSON.parse(output).positionProfile;
+        const perspectiveFields = ['distinctivePosition', 'uniqueInsight', 'futureOutlook'];
+        const missingPerspective = perspectiveFields.filter(k => typeof p?.jobPerspective?.[k] !== 'string' || !p.jobPerspective[k].trim());
         const checks = [
           ['coreResponsibilities', p?.coreResponsibilities, 5],
           ['coreCompetencies', p?.coreCompetencies, 5],
           ['coreKpis', p?.coreKpis, 5],
           ['okrDesign', p?.okrDesign, 2],
           ['innovationAchievements', p?.innovationAchievements, 4],
-          ['candidateTrend.years', p?.candidateTrend?.years, 3],
+          ['candidateTrend.trends', p?.candidateTrend?.trends, 3],
         ];
         const bad = checks.filter(([, value, count]) => !Array.isArray(value) || value.length !== count);
-        return bad.length === 0
+        const hasYearSplit = Object.prototype.hasOwnProperty.call(p?.candidateTrend || {}, 'years') ||
+          (p?.candidateTrend?.trends || []).some(item => Object.prototype.hasOwnProperty.call(item || {}, 'year'));
+        return bad.length === 0 && missingPerspective.length === 0 && !hasYearSplit
           ? true
-          : `岗位画像数量不完整: ${bad.map(([name, value, count]) => `${name}应为${count}条(实际${value?.length})`).join(', ')}`;
+          : `岗位画像不合规: 缺观点=${missingPerspective.join('|') || '无'}; 数量=${bad.map(([name, value, count]) => `${name}应为${count}条(实际${value?.length})`).join(', ') || '正常'}; 按年份拆分=${hasYearSplit}`;
 
 # ─────────────────────────────────────────────────────────────
 # tests：5 个典型场景。每个用例 = 通用 5 条 + 该用例特殊断言

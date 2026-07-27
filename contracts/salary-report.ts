@@ -53,14 +53,18 @@ export interface CityAnalysisItem {
 }
 
 export interface PositionProfile {
+  jobPerspective: {
+    distinctivePosition: string;
+    uniqueInsight: string;
+    futureOutlook: string;
+  };
   coreResponsibilities: string[];
   coreCompetencies: { name: string; description: string }[];
   coreKpis: { name: string; metric: string; target: string }[];
   okrDesign: { objective: string; keyResults: string[] }[];
   innovationAchievements: { title: string; evidence: string }[];
   candidateTrend: {
-    years: { year: 2024 | 2025 | 2026; demand: string; profileShift: string }[];
-    interpretation: string;
+    trends: { title: string; analysis: string }[];
   };
 }
 

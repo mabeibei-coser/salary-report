@@ -60,6 +60,11 @@ const validReport = {
   })),
   highEarnerTraits: "① 数据口径：用年度调薪结果证明贡献\n② 项目复盘：展示薪酬项目结果\n③ 市场对标：准备行业分位数据\n④ 合规能力：说明政策落地经验\n⑤ 系统能力：展示数字化成果\n⑥ 谈薪策略：整体打包薪酬结构\n⑦ 稀缺经验：突出复杂项目经历\n⑧ 结果承诺：明确入职后目标",
   positionProfile: {
+    jobPerspective: {
+      distinctivePosition: "薪酬专员的价值不是按时算薪，而是把薪酬资源精准导向业务贡献并守住合规底线。",
+      uniqueInsight: "高质量人选的分水岭不是熟悉制度条款，而是能从异常数据反推出机制问题并推动闭环。",
+      futureOutlook: "未来将从报表执行者转向人机协同的薪酬运营者，用模型预警成本、公平性和人才风险。",
+    },
     coreResponsibilities: Array.from({ length: 5 }, (_, index) => `薪酬核心职责 ${index + 1}`),
     coreCompetencies: Array.from({ length: 5 }, (_, index) => ({
       name: `核心能力 ${index + 1}`,
@@ -79,12 +84,11 @@ const validReport = {
       evidence: `创新业绩证据 ${index + 1}`,
     })),
     candidateTrend: {
-      years: [2024, 2025, 2026].map((year) => ({
-        year,
-        demand: "需求稳定",
-        profileShift: `${year} 年薪酬人选要求变化`,
-      })),
-      interpretation: "近三年企业更重视数据分析、业务理解与数字化工具能力的组合。",
+      trends: [
+        { title: "执行型供给充足", analysis: "会算薪和维护台账的人选增多，但能独立处理复杂薪酬场景的成熟供给仍然有限。" },
+        { title: "复合能力仍稀缺", analysis: "同时具备数据分析、机制理解和系统落地经验的人选占比有限，成果证据分化明显。" },
+        { title: "跨界来源扩大", analysis: "人才来源从传统薪酬模块扩展到数据分析与人力系统岗位，技能组合更加多元。" },
+      ],
     },
   },
 };
@@ -253,7 +257,8 @@ async function main() {
     assert.equal(firstResult.report.annual.p50, 280000);
     assert.equal(firstResult.report.rankLabel, "P4(高级专员/技术员)");
     assert.equal(firstResult.report.positionProfile.coreResponsibilities.length, 5);
-    assert.equal(firstResult.report.positionProfile.candidateTrend.years.length, 3);
+    assert.equal(firstResult.report.positionProfile.candidateTrend.trends.length, 3);
+    assert.equal(firstResult.report.positionProfile.jobPerspective.uniqueInsight.length > 0, true);
     assert.equal(providerRequests.length, 2);
     for (const request of providerRequests) {
       assert.equal(request.url, "/v1beta/models/gemini-json-test:generateContent");

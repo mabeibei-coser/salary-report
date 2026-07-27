@@ -338,14 +338,18 @@ const SYSTEM_PROMPT = `你是一位资深的中国薪酬数据分析专家。你
   "cityAnalysis": [{"city": "城市名", "monthlyAvg": 月薪均值, "costIndex": 生活成本指数(以北京=100), "salaryLevel": "高/中/低", "advantage": "该城市优势一句话"}],
   "highEarnerTraits": "该岗位 Top 20% 高薪人群的 8 个谈薪筹码，详见下方第 7 条",
   "positionProfile": {
+    "jobPerspective": {
+      "distinctivePosition": "对本岗位价值重心的鲜明判断",
+      "uniqueInsight": "区别于通用岗位说明的独到人才判断",
+      "futureOutlook": "未来2-3年的创新与演进判断"
+    },
     "coreResponsibilities": ["核心职责，共5条"],
     "coreCompetencies": [{"name": "能力名称", "description": "能力在该岗位中的具体表现"}],
     "coreKpis": [{"name": "KPI名称", "metric": "衡量口径", "target": "建议目标"}],
     "okrDesign": [{"objective": "目标O，共2个", "keyResults": ["KR1", "KR2", "KR3"]}],
     "innovationAchievements": [{"title": "创新方向", "evidence": "可验证的创新业绩表现"}],
     "candidateTrend": {
-      "years": [{"year": 2024, "demand": "需求趋势短标签", "profileShift": "该年人选要求变化"}],
-      "interpretation": "近3年人选趋势综合解读"
+      "trends": [{"title": "供给侧趋势标题，共3条", "analysis": "近3年该岗位人才供给侧的结构性变化"}]
     }
   }
 }
@@ -469,14 +473,19 @@ const SYSTEM_PROMPT = `你是一位资深的中国薪酬数据分析专家。你
 
 ### 8. positionProfile 岗位画像（第5部分）
 
-岗位画像必须同时结合【岗位 + 企业性质 + 职级 + 最高学历 + 城市】生成，内容用于招聘、面试和绩效沟通，不是通用岗位说明书：
+岗位画像必须同时结合【岗位 + 企业性质 + 职级 + 最高学历 + 城市】生成，内容用于招聘、面试和绩效沟通，不是通用岗位说明书。先识别该岗位独有的价值链、关键矛盾和未来变化，再写下列内容：
+- **强岗位定制硬规则**：每条都要出现只有该岗位才成立的工作对象、专业动作、交付物、业务场景或衡量结果。把岗位名替换成另一个岗位后仍然成立的内容必须重写。禁止只写“沟通协作、持续学习、积极主动、提质增效、数字化转型”等通用词。
+- **jobPerspective 岗位研判**：必须包含以下 3 个非空字段，每项 45-90 字，三项观点不得重复：
+  - distinctivePosition（鲜明定位）：明确该岗位当前最核心的价值重心、优先级和取舍；必须给出判断，不能只罗列事实。
+  - uniqueInsight（独到判断）：给出一个不显而易见但可用于识别人选的洞察，说明普通合格者与高质量人选的真正分水岭。
+  - futureOutlook（创新前瞻）：结合技术、工具、业务模式或组织变化，判断未来 2-3 年该岗位的角色演进和新的结果要求；不能只写“使用 AI 提效”。
 - **coreResponsibilities 核心职责**：必须刚好 5 条；每条 18-35 字，写清该职级真正负责的对象、动作和结果；管理岗体现团队/经营责任，专业岗体现交付深度。
 - **coreCompetencies 核心能力**：必须刚好 5 项；每项包含 name（4-10字）和 description（20-45字），说明能力在本岗位、本职级中的可观察行为，避免“沟通能力强”等空话。
 - **coreKpis 核心 KPI**：必须刚好 5 项；每项包含 name、metric、target。metric 写清衡量口径，target 给出合理的建议目标或区间；目标必须与岗位、企业性质和职级相称。不得把建议目标描述成用户当前企业的真实指标。
 - **okrDesign OKR 设计**：必须刚好 2 个 Objective；每个 Objective 必须刚好 3 个 Key Result。O 写结果方向，KR 必须可衡量、可在一个年度或季度内验证，不得与 KPI 简单重复。
-- **innovationAchievements 创新业绩表现**：必须刚好 4 项；每项包含 title 和 evidence，描述什么样的创新成果可被认定为高质量业绩，以及应拿出什么量化证据；这是业绩标杆示例，不得声称具体人选已经取得这些成果。
-- **candidateTrend 近3年人选趋势解读**：years 必须刚好 3 条，year 依次为 2024、2025、2026；每年包含 demand（2-6字趋势标签）和 profileShift（30-60字人选要求变化）。interpretation 用 80-140 字综合解释三年变化对招聘方和候选人的影响。
-- 人选趋势仅做方向性市场研判。没有可靠样本时禁止虚构招聘人数、简历样本量、精确占比或引用不存在的调研机构；可以描述需求升温/稳定/收缩、能力组合变化和企业偏好变化。`;
+- **innovationAchievements 创新业绩表现**：必须刚好 4 项；每项包含 title 和 evidence，描述该岗位领先于常规做法的创新成果，以及应拿出什么量化证据；至少 2 项要体现未来 2-3 年的新工具、新流程或新业务模式。这是业绩标杆示例，不得声称具体人选已经取得这些成果。
+- **candidateTrend 近3年人选趋势解读**：只从人才供给侧汇总近 3 年的结构变化，trends 必须刚好 3 条，不按 2024/2025/2026 分年，不得出现 year/years 字段。每条包含 title（6-12字鲜明趋势判断）和 analysis（45-90字岗位定制解读）。3 点分别优先覆盖：①可获得人才的数量与层次结构；②技能、经验和成果证据的供给变化；③人才来源、跨界迁移或地域流动变化。不得改写成企业需求、招聘偏好或逐年行情。
+- **趋势事实边界**：人选趋势仅做方向性市场研判。没有可靠样本时禁止虚构招聘人数、简历样本量、精确占比或引用不存在的调研机构。`;
 
 function buildUserMessage({ position, company, rank, education, city }) {
   return `请综合以下五项信息生成薪酬报告：
@@ -487,7 +496,7 @@ function buildUserMessage({ position, company, rank, education, city }) {
 - 所在城市：${city}
 
 请严格按系统提示的JSON格式返回完整数据，确保所有五项参数都体现在薪酬数据中。
-不得省略任何数组项：rankLadder 必须14条、salaryTrend 必须5条、industryAnalysis 必须25条、cityAnalysis 必须6条；positionProfile 的职责/能力/KPI/OKR/创新业绩/三年趋势必须分别为5/5/5/2/4/3条。`;
+不得省略任何数组项：rankLadder 必须14条、salaryTrend 必须5条、industryAnalysis 必须25条、cityAnalysis 必须6条；positionProfile 的岗位研判3项字段必须完整，职责/能力/KPI/OKR/创新业绩/供给侧趋势必须分别为5/5/5/2/4/3条。`;
 }
 
 function validateRequiredReportShape(report) {

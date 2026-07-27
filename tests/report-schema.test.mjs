@@ -5,6 +5,11 @@ import { hasCompletePositionProfile, hasRequiredReportShape } from "../lib/repor
 
 function makePositionProfile() {
   return {
+    jobPerspective: {
+      distinctivePosition: "鲜明定位：该岗位的核心价值在于把业务目标转成可验证结果",
+      uniqueInsight: "独到判断：真正稀缺的不是单项技能，而是跨场景闭环能力",
+      futureOutlook: "创新前瞻：未来两年将从执行角色升级为智能化业务伙伴",
+    },
     coreResponsibilities: Array.from({ length: 5 }, (_, i) => `核心职责 ${i + 1}`),
     coreCompetencies: Array.from({ length: 5 }, (_, i) => ({
       name: `核心能力 ${i + 1}`,
@@ -24,12 +29,10 @@ function makePositionProfile() {
       evidence: `业绩证据 ${i + 1}`,
     })),
     candidateTrend: {
-      years: [2024, 2025, 2026].map((year) => ({
-        year,
-        demand: "需求稳定",
-        profileShift: `${year} 年人选变化`,
+      trends: Array.from({ length: 3 }, (_, i) => ({
+        title: `供给趋势 ${i + 1}`,
+        analysis: `近三年该岗位人才供给结构变化 ${i + 1}`,
       })),
-      interpretation: "三年趋势综合解读",
     },
   };
 }
@@ -56,6 +59,7 @@ test("完整岗位画像通过报告结构校验", () => {
 
 test("缺少任一岗位画像模块时拒绝报告，避免缓存或展示半成品", () => {
   for (const field of [
+    "jobPerspective",
     "coreResponsibilities",
     "coreCompetencies",
     "coreKpis",
@@ -69,9 +73,18 @@ test("缺少任一岗位画像模块时拒绝报告，避免缓存或展示半�
   }
 });
 
-test("人选趋势必须覆盖 2024 至 2026 三年", () => {
+test("人选趋势必须是三点供给侧趋势", () => {
   const report = makeReport();
-  report.positionProfile.candidateTrend.years[1].year = 2023;
+  report.positionProfile.candidateTrend.trends.pop();
+  assert.equal(hasRequiredReportShape(report), false);
+});
+
+test("人选趋势拒绝按年份拆分的旧结构", () => {
+  const report = makeReport();
+  report.positionProfile.candidateTrend = {
+    years: [2024, 2025, 2026].map((year) => ({ year, demand: "稳定", profileShift: "变化" })),
+    interpretation: "逐年解读",
+  };
   assert.equal(hasRequiredReportShape(report), false);
 });
 

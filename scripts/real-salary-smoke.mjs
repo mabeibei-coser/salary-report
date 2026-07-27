@@ -95,11 +95,11 @@ function validateReport(report) {
   assert.equal(report.positionProfile?.coreKpis?.length, 5, "coreKpis count invalid");
   assert.equal(report.positionProfile?.okrDesign?.length, 2, "okrDesign count invalid");
   assert.equal(report.positionProfile?.innovationAchievements?.length, 4, "innovationAchievements count invalid");
-  assert.deepEqual(
-    report.positionProfile?.candidateTrend?.years?.map((item) => item.year),
-    [2024, 2025, 2026],
-    "candidateTrend years invalid",
-  );
+  assert.ok(report.positionProfile?.jobPerspective?.distinctivePosition, "distinctivePosition missing");
+  assert.ok(report.positionProfile?.jobPerspective?.uniqueInsight, "uniqueInsight missing");
+  assert.ok(report.positionProfile?.jobPerspective?.futureOutlook, "futureOutlook missing");
+  assert.equal(report.positionProfile?.candidateTrend?.trends?.length, 3, "candidateTrend trends invalid");
+  assert.equal("years" in report.positionProfile.candidateTrend, false, "candidateTrend must not split by year");
   assert.equal(
     report.annual.p50,
     Math.round((report.monthly.p50 * (12 + report.bonusMonths.p50)) / 100) * 100,

@@ -8,8 +8,14 @@ const MODULE_META = {
   kpis: { icon: Gauge, label: '核心 KPI' },
   okrs: { icon: Target, label: 'OKR 设计' },
   innovation: { icon: Lightbulb, label: '创新业绩表现' },
-  trend: { icon: TrendingUp, label: '近 3 年人选趋势解读' },
+  trend: { icon: TrendingUp, label: '近 3 年人选趋势解读（供给侧）' },
 };
+
+const PERSPECTIVE_META = [
+  { field: 'distinctivePosition', eyebrow: '鲜明定位', title: '这个岗位真正创造什么价值' },
+  { field: 'uniqueInsight', eyebrow: '独到判断', title: '识别人选时最容易忽略什么' },
+  { field: 'futureOutlook', eyebrow: '创新前瞻', title: '未来 2–3 年将向哪里演进' },
+];
 
 function ModuleTitle({ type, note }) {
   const { icon: Icon, label } = MODULE_META[type];
@@ -47,18 +53,17 @@ function ListCard({ type, items, renderItem }) {
   );
 }
 
-function trendTone(value) {
-  if (/升|增|旺|紧缺|扩大/.test(value)) return 'positive';
-  if (/降|减|缩|冷|放缓/.test(value)) return 'warning';
-  return 'neutral';
-}
-
 export default function PositionProfileSection({ data, index, total, locked }) {
-  if (!data) {
+  const hasCurrentProfile =
+    data?.jobPerspective &&
+    Array.isArray(data?.candidateTrend?.trends) &&
+    data.candidateTrend.trends.length === 3;
+
+  if (!hasCurrentProfile) {
     return (
       <SectionWrapper id="position-profile" title="岗位画像" index={index} total={total}>
         <div className="rounded-lg px-4 py-5 text-center text-[12.5px]" style={{ background: 'var(--cyan-50)', color: 'var(--report-ink-muted)' }}>
-          该历史报告生成于岗位画像上线前，请重新查询以生成完整岗位画像。
+          该历史报告使用旧版岗位画像，请重新查询以生成观点型画像与供给侧人选趋势。
         </div>
       </SectionWrapper>
     );
@@ -69,7 +74,7 @@ export default function PositionProfileSection({ data, index, total, locked }) {
   const kpis = Array.isArray(data.coreKpis) ? data.coreKpis : [];
   const okrs = Array.isArray(data.okrDesign) ? data.okrDesign : [];
   const achievements = Array.isArray(data.innovationAchievements) ? data.innovationAchievements : [];
-  const trendYears = Array.isArray(data.candidateTrend?.years) ? data.candidateTrend.years : [];
+  const trendItems = data.candidateTrend.trends;
 
   return (
     <SectionWrapper
@@ -77,11 +82,32 @@ export default function PositionProfileSection({ data, index, total, locked }) {
       title="岗位画像"
       index={index}
       total={total}
-      takeaway="从岗位做什么、靠什么做好，到如何衡量结果与识别人选，形成一张可用于招聘、面试和绩效沟通的岗位全景图。"
-      meta="2024–2026 人才市场"
+      takeaway="先给出对本岗位的鲜明判断，再展开职责、能力、结果标准和人才供给变化，避免一套话术套所有岗位。"
+      meta="岗位定制 · 供给侧研判"
       locked={locked}
     >
       <div className="space-y-4">
+        <div className="grid md:grid-cols-3 gap-3">
+          {PERSPECTIVE_META.map((item, itemIndex) => (
+            <div
+              key={item.field}
+              className="rounded-lg p-4"
+              style={{
+                border: '1px solid var(--report-border)',
+                background: itemIndex === 0 ? 'var(--cyan-50)' : 'oklch(0.985 0.006 240)',
+              }}
+            >
+              <div className="text-[10px] font-semibold tracking-[0.14em]" style={{ color: 'var(--cyan-700)' }}>
+                {item.eyebrow}
+              </div>
+              <div className="mt-1 text-[12px] font-semibold" style={{ color: 'var(--navy-900)' }}>{item.title}</div>
+              <p className="mt-2 mb-0 text-[11.5px] leading-relaxed" style={{ color: 'var(--report-ink-soft)' }}>
+                {data.jobPerspective[item.field]}
+              </p>
+            </div>
+          ))}
+        </div>
+
         <div className="grid md:grid-cols-2 gap-4">
           <ListCard type="responsibilities" items={responsibilities} renderItem={(item) => item} />
           <ListCard
@@ -147,17 +173,16 @@ export default function PositionProfileSection({ data, index, total, locked }) {
           <div className="md:col-span-3 rounded-lg p-4" style={{ border: '1px solid var(--report-border)', background: 'oklch(0.985 0.006 240)' }}>
             <ModuleTitle type="trend" note="方向性研判，不代表平台样本统计" />
             <div className="grid sm:grid-cols-3 gap-2.5">
-              {trendYears.map((item) => (
-                <div key={item.year} className="rounded-md bg-white p-3" style={{ border: '1px solid var(--report-border)' }}>
-                  <div className="flex items-center justify-between gap-2 mb-2">
-                    <span className="text-[13px] font-bold tabular-nums" style={{ color: 'var(--navy-900)' }}>{item.year}</span>
-                    <span className="status-pill" data-tone={trendTone(item.demand)}>{item.demand}</span>
+              {trendItems.map((item, itemIndex) => (
+                <div key={`${item.title}-${itemIndex}`} className="rounded-md bg-white p-3" style={{ border: '1px solid var(--report-border)' }}>
+                  <div className="text-[9.5px] font-semibold tracking-[0.12em]" style={{ color: 'var(--cyan-600)' }}>
+                    趋势 {String(itemIndex + 1).padStart(2, '0')}
                   </div>
-                  <p className="text-[11px] leading-relaxed m-0" style={{ color: 'var(--report-ink-soft)' }}>{item.profileShift}</p>
+                  <div className="mt-1 text-[12px] font-semibold" style={{ color: 'var(--navy-900)' }}>{item.title}</div>
+                  <p className="text-[11px] leading-relaxed mt-2 mb-0" style={{ color: 'var(--report-ink-soft)' }}>{item.analysis}</p>
                 </div>
               ))}
             </div>
-            <div className="report-takeaway mt-3 text-[12px]">{data.candidateTrend?.interpretation}</div>
           </div>
         </div>
       </div>
