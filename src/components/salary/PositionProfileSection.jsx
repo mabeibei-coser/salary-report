@@ -12,9 +12,9 @@ const MODULE_META = {
 };
 
 const PERSPECTIVE_META = [
-  { field: 'distinctivePosition', eyebrow: '鲜明定位', title: '这个岗位真正创造什么价值' },
-  { field: 'uniqueInsight', eyebrow: '独到判断', title: '识别人选时最容易忽略什么' },
-  { field: 'futureOutlook', eyebrow: '创新前瞻', title: '未来 2–3 年将向哪里演进' },
+  { field: 'distinctivePosition', title: '这个岗位真正创造什么价值' },
+  { field: 'uniqueInsight', title: '识别人选时最容易忽略什么' },
+  { field: 'futureOutlook', title: '未来 2–3 年将向哪里演进' },
 ];
 
 const SUPPLY_TREND_CATEGORIES = ['数量与层次', '技能与证据', '来源与流动'];
@@ -90,7 +90,6 @@ export default function PositionProfileSection({ data, index, total, locked }) {
       title="岗位画像"
       index={index}
       total={total}
-      takeaway="先给出对本岗位的鲜明判断，再展开职责、能力、结果标准和人才供给变化，避免一套话术套所有岗位。"
       meta="岗位定制 · 供给侧研判"
       locked={locked}
     >
@@ -105,10 +104,7 @@ export default function PositionProfileSection({ data, index, total, locked }) {
                 background: itemIndex === 0 ? 'var(--cyan-50)' : 'oklch(0.985 0.006 240)',
               }}
             >
-              <div className="text-[10px] font-semibold tracking-[0.14em]" style={{ color: 'var(--cyan-700)' }}>
-                {item.eyebrow}
-              </div>
-              <div className="mt-1 text-[12px] font-semibold" style={{ color: 'var(--navy-900)' }}>{item.title}</div>
+              <div className="text-[12px] font-semibold" style={{ color: 'var(--navy-900)' }}>{item.title}</div>
               <p className="mt-2 mb-0 text-[11.5px] leading-relaxed" style={{ color: 'var(--report-ink-soft)' }}>
                 {data.jobPerspective[item.field]}
               </p>
