@@ -10,19 +10,18 @@ dotenv.config({ path: path.join(__dirname, ".env") });
 const { default: express } = await import("express");
 const { getSession } = await import("./lib/session.js");
 const { getDb, upsertUserByPhone, insertReport, findCachedReport, getReportByIdForPhone } = await import("./lib/db.js");
+const {
+  BananaRouterJsonError,
+  generateJsonWithBananaRouter,
+  getBananaRouterJsonConfig,
+} = await import("./lib/bananarouter-gemini-json.js");
 
 const QUERY_CACHE_MS = 30 * 24 * 60 * 60 * 1000;
 const PORT = Number(process.env.PORT) || 4001;
 const CENTER_BASE_URL = process.env.ATA_CENTER_BASE_URL || "http://localhost:4004";
 
-// 主模型：讯飞 astron-code-latest
-const PRIMARY_URL =
-  process.env.IFLYTEK_API_URL ||
-  "https://maas-coding-api.cn-huabei-1.xf-yun.com/v2/chat/completions";
-const PRIMARY_KEY =
-  process.env.IFLYTEK_API_KEY || process.env.VITE_GLM_API_KEY;
-const PRIMARY_MODEL =
-  process.env.IFLYTEK_MODEL || process.env.VITE_GLM_MODEL || "astron-code-latest";
+// 主模型：BananaRouter Gemini-native；旧 VITE_GLM_* 不再进入服务端主链。
+const PRIMARY_CONFIG = getBananaRouterJsonConfig();
 
 // 备用模型：env 全配上时启用；任一为空都跳过备用，主模型失败直接报错
 const BACKUP_URL = process.env.BACKUP_API_URL || "";
@@ -127,7 +126,7 @@ app.get(
   })
 );
 
-// ── 查询：调讯飞 + 入库（一次性原子）──
+// ── 查询：调 Gemini + 入库（一次性原子）──
 
 app.post(
   "/api/queries",
@@ -162,7 +161,7 @@ app.post(
       }
     }
 
-    if (!PRIMARY_KEY) {
+    if (!PRIMARY_CONFIG) {
       return res.status(500).json({ error: "服务器未配置 AI API key" });
     }
 
@@ -174,13 +173,21 @@ app.post(
     const startedAt = Date.now();
     let report = null;
 
-    // 主模型：坏 JSON 自动重试一次（讯飞偶发吐坏 JSON，重试通常即好）；
+    // 主模型：坏 JSON 自动重试一次；
     // 超时 / HTTP 错不重试，避免再白等一个 90s。
     for (let attempt = 1; attempt <= 2 && !report; attempt++) {
       try {
-        report = await callLLM({ url: PRIMARY_URL, apiKey: PRIMARY_KEY, model: PRIMARY_MODEL, messages });
+        const candidate = await generateJsonWithBananaRouter({
+          config: PRIMARY_CONFIG,
+          systemPrompt: SYSTEM_PROMPT,
+          userPrompt: messages[1].content,
+        });
+        validateRequiredReportShape(candidate);
+        report = candidate;
       } catch (primaryErr) {
-        console.error(`[queries] 主模型失败(第${attempt}次):`, primaryErr?.message || primaryErr);
+        const category =
+          primaryErr instanceof BananaRouterJsonError ? primaryErr.category : "unknown";
+        console.error(`[queries] 主模型失败(第${attempt}次):`, category);
         if (primaryErr?.kind !== "parse") break;
       }
     }
@@ -204,7 +211,7 @@ app.post(
     }
 
     // 年薪在服务端按「月薪 ×（12 + 年终奖月数）」算出，保证与月薪自洽
-    // （ladder 瘦身后不再让讯飞各自生成年薪；讯飞自算的年薪常与月薪差几个百分点）
+    // （ladder 瘦身后不再让模型各自生成年薪；模型自算的年薪常与月薪差几个百分点）
     if (report?.monthly && report?.bonusMonths) {
       const annualBy = (p) => {
         const m = report.monthly[p];
@@ -235,7 +242,7 @@ app.post(
   })
 );
 
-// 调用一个 LLM endpoint，返回解析后的 JSON 报告。
+// 调用可选的 OpenAI-compatible 备用 endpoint，返回解析后的 JSON 报告。
 // 质检只剩一项：返回内容必须能 JSON.parse。任何环节失败都抛异常，由外层决定是否走备用模型。
 async function callLLM({ url, apiKey, model, messages }, timeoutMs = 90_000) {
   const upstream = await fetch(url, {
@@ -248,8 +255,7 @@ async function callLLM({ url, apiKey, model, messages }, timeoutMs = 90_000) {
     signal: AbortSignal.timeout(timeoutMs),
   });
   if (!upstream.ok) {
-    const text = await upstream.text().catch(() => "");
-    throw new Error(`HTTP ${upstream.status} ${text.slice(0, 200)}`);
+    throw new Error(`HTTP ${upstream.status}`);
   }
   const result = await upstream.json();
   const content = result?.choices?.[0]?.message?.content;
@@ -283,7 +289,7 @@ app.listen(PORT, () => {
   }
 });
 
-// ── 讯飞 prompt（与原 src/services/api.js 一致）──
+// ── 薪酬报告 prompt ──
 const SYSTEM_PROMPT = `你是一位资深的中国薪酬数据分析专家。你必须综合用户提供的【岗位名称、企业性质、职级、最高学历、所在城市】所有五项信息，生成一份精准的结构化薪酬数据报告。
 
 ## 第零步：岗位名称有效性校验（最高优先级，先于一切其它步骤）
@@ -454,5 +460,29 @@ function buildUserMessage({ position, company, rank, education, city }) {
 - 最高学历：${education}
 - 所在城市：${city}
 
-请严格按系统提示的JSON格式返回完整数据，确保所有五项参数都体现在薪酬数据中。`;
+请严格按系统提示的JSON格式返回完整数据，确保所有五项参数都体现在薪酬数据中。
+不得省略任何数组项：rankLadder 必须14条、salaryTrend 必须5条、industryAnalysis 必须25条、cityAnalysis 必须6条。`;
+}
+
+function validateRequiredReportShape(report) {
+  if (report?.invalid === true) return;
+  const counts = [
+    ["rankLadder", 14],
+    ["salaryTrend", 5],
+    ["industryAnalysis", 25],
+    ["cityAnalysis", 6],
+  ];
+  const arraysValid = counts.every(
+    ([field, expected]) => Array.isArray(report?.[field]) && report[field].length === expected,
+  );
+  const objectsValid = ["monthly", "annual", "bonusMonths"].every(
+    (field) => report?.[field] && typeof report[field] === "object",
+  );
+  if (arraysValid && objectsValid && typeof report?.highEarnerTraits === "string") return;
+  const error = new BananaRouterJsonError(
+    "schema_invalid",
+    "BananaRouter 返回的报告结构不完整",
+    "parse",
+  );
+  throw error;
 }

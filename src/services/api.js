@@ -1,6 +1,6 @@
 /**
  * salary-report API 客户端
- * 改造后：浏览器 → /api/queries → Express → 讯飞 → 入库 → 返回报告
+ * 浏览器 → /api/queries → Express → Gemini → 入库 → 返回报告
  * （原来的 BASE_URL/api/chat 直连讯飞 + 浏览器持 API key 的写法已废弃）
  */
 

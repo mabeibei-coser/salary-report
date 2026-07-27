@@ -8,6 +8,8 @@
     "dev:vite": "vite",
     "dev:api": "node server.js",
     "build": "vite build",
+    "test:llm": "node --test --test-isolation=none tests/bananarouter-gemini-json.test.mjs",
+    "test:e2e:local": "node tests/local-flow.e2e.mjs",
     "start": "NODE_ENV=production node server.js",
     "preview": "vite preview",
     "eval:prompt": "npx -y promptfoo@0.120.27 eval -c prompt-eval/promptfooconfig.yaml --env-file .env.local"

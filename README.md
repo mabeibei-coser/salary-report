@@ -8,13 +8,13 @@
 
 - 前端：Vite 5 + React 18 + MUI + Tailwind（单页）
 - 后端：Node + Express + iron-session + better-sqlite3（`server.js`）
-- AI：服务端调讯飞 `astron-code-latest`（key 在 server 进程，浏览器 bundle 不含）
+- AI：服务端调 BananaRouter Gemini-native `gemini-3.1-flash-lite`（key 在 server 进程，浏览器 bundle 不含）
 
 ## 本地跑
 
 ```bash
 npm install
-cp .env.local.example .env.local   # 填讯飞 API key + 生成 session 密钥
+cp .env.local.example .env.local   # 填 BananaRouter API key + 生成 session 密钥
 npm run dev                        # 同时启 vite(:3000) + express(:4001)
 ```
 
@@ -23,8 +23,9 @@ npm run dev                        # 同时启 vite(:3000) + express(:4001)
 `.env.local` 关键变量：
 
 ```
-IFLYTEK_API_KEY=<讯飞 maas-coding API key>
-IFLYTEK_MODEL=astron-code-latest
+BANANAROUTER_API_KEY=<BananaRouter API key>
+BANANAROUTER_BASE_URL=https://api.bananarouter.com
+BANANAROUTER_MODEL=gemini-3.1-flash-lite
 SALARY_SESSION_PASSWORD=<≥32 字符 base64>
 PORT=4001
 SALARY_COOKIE_SECURE=false
@@ -41,7 +42,7 @@ node -e "console.log(require('crypto').randomBytes(48).toString('base64'))"
 1. 打开 `/` 看到登录卡（手机号 + 登录按钮，V1 无验证码）
 2. 输入 11 位手机号 → POST `/api/login` → 写 cookie + users 表 upsert
 3. 填查询表单 → POST `/api/queries` →
-   - 服务端调讯飞 → JSON 校验 → 写 reports 表 → 返回报告
+   - 服务端调 Gemini → JSON 校验 → 写 reports 表 → 返回报告
 4. 浏览器渲染 `SalaryReport`
 
 ## 主要文件
@@ -77,8 +78,8 @@ admin-hub 在「报告管理 → 薪酬查询」入口下展示所有查询记�
 
 ## 已知遗留
 
-- `.env.local` 兼容字段 `VITE_GLM_*` 暂保留，老 build 还在引用。新版 server.js 优先读
-  `IFLYTEK_API_KEY`，fallback `VITE_GLM_API_KEY`。下次清理时可一起删除。
+- `.env.local` 里的旧 `VITE_GLM_*` 可暂时保留用于回退核对，但新版 server.js 不再读取，
+  主线路只读取 `BANANAROUTER_*`。可选 `BACKUP_API_*` 仍是独立备用供应商合同。
 - `src/data/salaryDatabase.js` 仍保留源仓库的 mock 计算函数（`generateSalaryData` 等），
   新版 API 路径未使用，未删（属于源仓库残留）。
 - `src/utils/salaryCalculator.js` 的 `formatSalary` 等格式化函数仍被组件使用，保留。
