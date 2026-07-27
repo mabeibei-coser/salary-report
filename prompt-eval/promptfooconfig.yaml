@@ -32,14 +32,14 @@ defaultTest:
   assert:
     - type: is-json
 
-    # 1. 结构完整性：16 个顶层字段都在
+    # 1. 结构完整性：17 个顶层字段都在
     - type: javascript
       value: |
         const r = JSON.parse(output);
         const required = ['position','company','rank','education','city',
                           'monthly','annual','bonusMonths','equity','housingFund',
                           'hourlyRate','marketComparison','salaryTrend',
-                          'industryAnalysis','cityAnalysis','highEarnerTraits'];
+                          'industryAnalysis','cityAnalysis','highEarnerTraits','positionProfile'];
         const missing = required.filter(k => !(k in r));
         return missing.length === 0
           ? true
@@ -138,6 +138,23 @@ defaultTest:
         return bad.length === 0
           ? true
           : `salaryIncrease 越界 (应 1.5%-6%): ${bad.slice(0,5).join(', ')}${bad.length > 5 ? ` …等共 ${bad.length} 条`: ''}`;
+
+    # 10. 岗位画像六个模块数量完整
+    - type: javascript
+      value: |
+        const p = JSON.parse(output).positionProfile;
+        const checks = [
+          ['coreResponsibilities', p?.coreResponsibilities, 5],
+          ['coreCompetencies', p?.coreCompetencies, 5],
+          ['coreKpis', p?.coreKpis, 5],
+          ['okrDesign', p?.okrDesign, 2],
+          ['innovationAchievements', p?.innovationAchievements, 4],
+          ['candidateTrend.years', p?.candidateTrend?.years, 3],
+        ];
+        const bad = checks.filter(([, value, count]) => !Array.isArray(value) || value.length !== count);
+        return bad.length === 0
+          ? true
+          : `岗位画像数量不完整: ${bad.map(([name, value, count]) => `${name}应为${count}条(实际${value?.length})`).join(', ')}`;
 
 # ─────────────────────────────────────────────────────────────
 # tests：5 个典型场景。每个用例 = 通用 5 条 + 该用例特殊断言

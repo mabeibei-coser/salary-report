@@ -52,6 +52,18 @@ export interface CityAnalysisItem {
   advantage: string;
 }
 
+export interface PositionProfile {
+  coreResponsibilities: string[];
+  coreCompetencies: { name: string; description: string }[];
+  coreKpis: { name: string; metric: string; target: string }[];
+  okrDesign: { objective: string; keyResults: string[] }[];
+  innovationAchievements: { title: string; evidence: string }[];
+  candidateTrend: {
+    years: { year: 2024 | 2025 | 2026; demand: string; profileShift: string }[];
+    interpretation: string;
+  };
+}
+
 export interface SalaryReportData {
   position: string;
   company: string;
@@ -71,6 +83,7 @@ export interface SalaryReportData {
   industryAnalysis: IndustryAnalysisItem[];
   cityAnalysis: CityAnalysisItem[];
   highEarnerTraits: string;
+  positionProfile: PositionProfile;
 }
 
 /** salary-report 数据库 reports 表的直接列（非 report_json 内字段） */

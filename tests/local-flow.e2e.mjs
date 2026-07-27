@@ -59,6 +59,34 @@ const validReport = {
     advantage: "固定测试城市优势",
   })),
   highEarnerTraits: "① 数据口径：用年度调薪结果证明贡献\n② 项目复盘：展示薪酬项目结果\n③ 市场对标：准备行业分位数据\n④ 合规能力：说明政策落地经验\n⑤ 系统能力：展示数字化成果\n⑥ 谈薪策略：整体打包薪酬结构\n⑦ 稀缺经验：突出复杂项目经历\n⑧ 结果承诺：明确入职后目标",
+  positionProfile: {
+    coreResponsibilities: Array.from({ length: 5 }, (_, index) => `薪酬核心职责 ${index + 1}`),
+    coreCompetencies: Array.from({ length: 5 }, (_, index) => ({
+      name: `核心能力 ${index + 1}`,
+      description: `薪酬岗位能力表现 ${index + 1}`,
+    })),
+    coreKpis: Array.from({ length: 5 }, (_, index) => ({
+      name: `核心 KPI ${index + 1}`,
+      metric: `衡量口径 ${index + 1}`,
+      target: `建议目标 ${index + 1}`,
+    })),
+    okrDesign: Array.from({ length: 2 }, (_, index) => ({
+      objective: `薪酬目标 ${index + 1}`,
+      keyResults: Array.from({ length: 3 }, (_, krIndex) => `关键结果 ${index + 1}-${krIndex + 1}`),
+    })),
+    innovationAchievements: Array.from({ length: 4 }, (_, index) => ({
+      title: `创新方向 ${index + 1}`,
+      evidence: `创新业绩证据 ${index + 1}`,
+    })),
+    candidateTrend: {
+      years: [2024, 2025, 2026].map((year) => ({
+        year,
+        demand: "需求稳定",
+        profileShift: `${year} 年薪酬人选要求变化`,
+      })),
+      interpretation: "近三年企业更重视数据分析、业务理解与数字化工具能力的组合。",
+    },
+  },
 };
 
 function listen(server) {
@@ -155,6 +183,7 @@ async function main() {
   const center = http.createServer(centerApp);
 
   let child;
+  let phase = "启动本地服务";
   const logs = { stdout: "", stderr: "" };
   try {
     const [providerPort, centerPort, appPort] = await Promise.all([
@@ -188,7 +217,9 @@ async function main() {
     child.stderr.on("data", (chunk) => (logs.stderr += chunk));
 
     const appBase = `http://127.0.0.1:${appPort}`;
+    phase = "等待 A500 就绪";
     await waitForServer(`${appBase}/api/me`, child, logs);
+    phase = "验证未登录拦截";
     const noSession = await fetch(`${appBase}/api/queries`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -197,6 +228,7 @@ async function main() {
     assert.equal(noSession.status, 401);
     assert.equal(providerRequests.length, 0);
 
+    phase = "模拟会员中心登录";
     const login = await fetch(`http://127.0.0.1:${centerPort}/test-login`);
     const cookie = login.headers.get("set-cookie")?.split(";", 1)[0];
     assert.ok(cookie?.startsWith("ata_member_session="));
@@ -207,6 +239,7 @@ async function main() {
     assert.equal(vip.status, 200);
     assert.equal((await vip.json()).isVip, true);
 
+    phase = "首次生成完整报告";
     const first = await fetch(`${appBase}/api/queries`, {
       method: "POST",
       headers: { "Content-Type": "application/json", cookie },
@@ -219,6 +252,8 @@ async function main() {
     assert.equal(firstResult.report.monthly.p50, 20000);
     assert.equal(firstResult.report.annual.p50, 280000);
     assert.equal(firstResult.report.rankLabel, "P4(高级专员/技术员)");
+    assert.equal(firstResult.report.positionProfile.coreResponsibilities.length, 5);
+    assert.equal(firstResult.report.positionProfile.candidateTrend.years.length, 3);
     assert.equal(providerRequests.length, 2);
     for (const request of providerRequests) {
       assert.equal(request.url, "/v1beta/models/gemini-json-test:generateContent");
@@ -229,6 +264,7 @@ async function main() {
       assert.match(request.body.contents[0].parts[0].text, /岗位名称：薪酬专员/);
     }
 
+    phase = "读取历史报告";
     const history = await fetch(`${appBase}/api/me/history/salary/${firstResult.reportId}`, {
       headers: { cookie },
     });
@@ -237,6 +273,7 @@ async function main() {
     assert.equal(historyResult.report.annual.p50, 280000);
     assert.equal(historyResult.position, fixedQuery.position);
 
+    phase = "验证新版报告缓存";
     const cached = await fetch(`${appBase}/api/queries`, {
       method: "POST",
       headers: { "Content-Type": "application/json", cookie },
@@ -246,11 +283,13 @@ async function main() {
     const cachedResult = await cached.json();
     assert.equal(cachedResult.cached, true);
     assert.equal(cachedResult.durationMs, 0);
+    assert.equal(cachedResult.report.positionProfile.okrDesign.length, 2);
     assert.notEqual(cachedResult.reportId, firstResult.reportId);
     assert.equal(providerRequests.length, 2);
 
     providerMode = "http-error";
     const failedQuery = { ...fixedQuery, position: "薪酬福利经理" };
+    phase = "验证上游失败处理";
     const failed = await fetch(`${appBase}/api/queries`, {
       method: "POST",
       headers: { "Content-Type": "application/json", cookie },
@@ -305,6 +344,12 @@ async function main() {
         distLeakMatches: 0,
       }),
     );
+  } catch (error) {
+    console.error(`[local-flow] 失败阶段：${phase}`);
+    console.error(`[local-flow] A500 exit=${child?.exitCode ?? "running"}`);
+    if (logs.stdout) console.error(`[local-flow] stdout:\n${logs.stdout}`);
+    if (logs.stderr) console.error(`[local-flow] stderr:\n${logs.stderr}`);
+    throw error;
   } finally {
     if (child) await stopChild(child);
     await Promise.all([close(provider), close(center)]);

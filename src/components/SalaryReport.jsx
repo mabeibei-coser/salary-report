@@ -4,8 +4,9 @@ import OverviewSection from './salary/OverviewSection';
 import MarketSection from './salary/MarketSection';
 import CitySection from './salary/CitySection';
 import IndustrySection from './salary/IndustrySection';
+import PositionProfileSection from './salary/PositionProfileSection';
 
-const TOTAL = 4;
+const TOTAL = 5;
 
 export default function SalaryReport({ report, isVip }) {
   return (
@@ -25,6 +26,7 @@ export default function SalaryReport({ report, isVip }) {
       <MarketSection data={report} index={2} total={TOTAL} />
       <CitySection data={report.cityAnalysis} index={3} total={TOTAL} locked={!isVip} />
       <IndustrySection data={report.industryAnalysis} index={4} total={TOTAL} locked={!isVip} />
+      <PositionProfileSection data={report.positionProfile} index={5} total={TOTAL} locked={!isVip} />
     </Box>
   );
 }

@@ -15,7 +15,7 @@ export default function VipOverlay({ isVip, children }) {
         <div className="text-center px-4 py-6">
           <WorkspacePremiumIcon style={{ fontSize: 32, color: '#b08a3e', display: 'block', margin: '0 auto 8px' }} />
           <p className="text-sm font-semibold text-gray-800 mb-1">VIP 会员可见</p>
-          <p className="text-xs text-gray-500 mb-3">开通 VIP 解锁行业细分与高薪人群数据</p>
+          <p className="text-xs text-gray-500 mb-3">开通 VIP 解锁城市、行业与岗位画像完整内容</p>
           <a
             href={`${CENTER_URL}billing`}
             className="inline-block px-5 py-2 text-sm font-semibold text-white rounded-lg transition-all hover:opacity-90"

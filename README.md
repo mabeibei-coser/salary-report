@@ -1,6 +1,6 @@
 # salary-report（2026岗位薪资查询平台）
 
-填岗位 / 企业性质 / 职级 / 学历 / 城市 5 项，AI 出一份结构化薪酬报告（月薪/年薪/年终奖/股权/公积金/市场对标/城市对比/高薪人群画像）。
+填岗位 / 企业性质 / 职级 / 学历 / 城市 5 项，AI 出一份结构化薪酬报告（月薪/年薪/年终奖/股权/公积金/市场对标/城市对比/高薪人群画像/岗位画像）。第 5 部分岗位画像包含核心职责、核心能力、核心 KPI、OKR 设计、创新业绩表现和近 3 年人选趋势解读。
 
 **业务方**：永升服务 HR；**接管自**：hezw02/salary-report001（老公的仓库）。
 
@@ -56,6 +56,7 @@ node -e "console.log(require('crypto').randomBytes(48).toString('base64'))"
 | 前端 | `src/components/LoginForm.jsx` | 手机号登录卡 |
 | 前端 | `src/components/SearchForm.jsx` | 5 项参数表单 |
 | 前端 | `src/components/SalaryReport.jsx` | 报告聚合渲染 |
+| 前端 | `src/components/salary/PositionProfileSection.jsx` | 第 5 部分岗位画像渲染 |
 | 前端 | `src/services/api.js` | 浏览器 → /api/* 的 fetch 包装 |
 | 前端 | `src/data/salaryDatabase.js` | 表单选项常量（岗位/企业/职级/学历/城市）|
 | 配置 | `vite.config.js` | dev `/api/*` 反代到 :4001 |

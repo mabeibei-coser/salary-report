@@ -25,7 +25,18 @@
       "salaryTrend": [{"year": 年份, "monthly": 月薪}],
       "industryAnalysis": [{"industry": "行业", "description": "描述", "monthlyRange": "范围", "annualRange": "范围", "demandLevel": "高/中/低", "salaryIncrease": "上一年度涨薪如 5.5%"}],
       "cityAnalysis": [{"city": "城市名", "monthlyAvg": 月薪均值, "costIndex": 生活成本指数(以北京=100), "salaryLevel": "高/中/低", "advantage": "该城市优势一句话"}],
-      "highEarnerTraits": "该岗位 Top 20% 高薪人群的 8 个谈薪筹码，详见下方第 7 条"
+      "highEarnerTraits": "该岗位 Top 20% 高薪人群的 8 个谈薪筹码，详见下方第 7 条",
+      "positionProfile": {
+        "coreResponsibilities": ["核心职责，共5条"],
+        "coreCompetencies": [{"name": "能力名称", "description": "能力在该岗位中的具体表现"}],
+        "coreKpis": [{"name": "KPI名称", "metric": "衡量口径", "target": "建议目标"}],
+        "okrDesign": [{"objective": "目标O，共2个", "keyResults": ["KR1", "KR2", "KR3"]}],
+        "innovationAchievements": [{"title": "创新方向", "evidence": "可验证的创新业绩表现"}],
+        "candidateTrend": {
+          "years": [{"year": 2024, "demand": "需求趋势短标签", "profileShift": "该年人选要求变化"}],
+          "interpretation": "近3年人选趋势综合解读"
+        }
+      }
     }
 
     ## 职级标签白名单（rankLabel / rankLadder[].rankLabel 必须严格逐字复制下列字符串，不许新增/删除/替换任何字符，不许重组括号内容）
@@ -79,7 +90,7 @@
 
     ### 第三步：展开其余字段
 
-    基于第二步的 monthly/annual，按下方"核心规则"展开 bonusMonths、equity、housingFund、hourlyRate、marketComparison、salaryTrend、industryAnalysis、cityAnalysis、highEarnerTraits。
+    基于第二步的 monthly/annual，按下方"核心规则"展开 bonusMonths、equity、housingFund、hourlyRate、marketComparison、salaryTrend、industryAnalysis、cityAnalysis、highEarnerTraits、positionProfile。
 
     ## 职级具体化描述（用于第一步全表推理 + 第二步精准匹配）
 
@@ -145,6 +156,16 @@
     - 涉及金额时用相对值（"高 15%"、"提一档"），不要写具体金额
     - 总字数 260-340 字，紧凑、可立即落地
 
+    ### 8. positionProfile 岗位画像（第5部分）
+    岗位画像必须同时结合【岗位 + 企业性质 + 职级 + 最高学历 + 城市】生成，内容用于招聘、面试和绩效沟通，不是通用岗位说明书：
+    - coreResponsibilities 必须刚好 5 条，每条写清该职级负责的对象、动作和结果。
+    - coreCompetencies 必须刚好 5 项，每项包含 name 和 description，写可观察行为，避免空话。
+    - coreKpis 必须刚好 5 项，每项包含 name、metric、target；target 是建议目标，不得冒充企业真实指标。
+    - okrDesign 必须刚好 2 个 Objective，每个必须刚好 3 个 Key Result；KR 可衡量、可验证。
+    - innovationAchievements 必须刚好 4 项，每项包含 title 和 evidence；这是业绩标杆示例，不得声称人选已取得成果。
+    - candidateTrend.years 必须刚好 3 条，year 依次为 2024、2025、2026；每年包含 demand 和 profileShift；interpretation 综合解读三年变化。
+    - 人选趋势仅做方向性市场研判，禁止虚构招聘人数、简历样本量、精确占比或引用不存在的调研机构。
+
 - role: user
   content: |
     请综合以下五项信息生成薪酬报告：
@@ -155,3 +176,4 @@
     - 所在城市：{{city}}
 
     请严格按系统提示的JSON格式返回完整数据，确保所有五项参数都体现在薪酬数据中。
+    不得省略任何数组项：rankLadder 必须14条、salaryTrend 必须5条、industryAnalysis 必须25条、cityAnalysis 必须6条；positionProfile 的职责/能力/KPI/OKR/创新业绩/三年趋势必须分别为5/5/5/2/4/3条。

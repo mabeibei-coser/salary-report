@@ -90,6 +90,16 @@ function validateReport(report) {
   assert.equal(report.cityAnalysis?.length, 6, "cityAnalysis count invalid");
   assert.equal(typeof report.highEarnerTraits, "string");
   assert.ok(report.highEarnerTraits.length > 100);
+  assert.equal(report.positionProfile?.coreResponsibilities?.length, 5, "coreResponsibilities count invalid");
+  assert.equal(report.positionProfile?.coreCompetencies?.length, 5, "coreCompetencies count invalid");
+  assert.equal(report.positionProfile?.coreKpis?.length, 5, "coreKpis count invalid");
+  assert.equal(report.positionProfile?.okrDesign?.length, 2, "okrDesign count invalid");
+  assert.equal(report.positionProfile?.innovationAchievements?.length, 4, "innovationAchievements count invalid");
+  assert.deepEqual(
+    report.positionProfile?.candidateTrend?.years?.map((item) => item.year),
+    [2024, 2025, 2026],
+    "candidateTrend years invalid",
+  );
   assert.equal(
     report.annual.p50,
     Math.round((report.monthly.p50 * (12 + report.bonusMonths.p50)) / 100) * 100,
@@ -177,6 +187,7 @@ async function main() {
         salaryTrend: result.report.salaryTrend.length,
         industries: result.report.industryAnalysis.length,
         cities: result.report.cityAnalysis.length,
+        positionProfile: true,
         persistedReports: 1,
         logLeakMatches: 0,
       }),
