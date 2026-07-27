@@ -177,11 +177,13 @@ app.post(
     // 超时 / HTTP 错不重试，避免再白等一个 90s。
     for (let attempt = 1; attempt <= 2 && !report; attempt++) {
       try {
-        report = await generateJsonWithBananaRouter({
+        const candidate = await generateJsonWithBananaRouter({
           config: PRIMARY_CONFIG,
           systemPrompt: SYSTEM_PROMPT,
           userPrompt: messages[1].content,
         });
+        validateRequiredReportShape(candidate);
+        report = candidate;
       } catch (primaryErr) {
         const category =
           primaryErr instanceof BananaRouterJsonError ? primaryErr.category : "unknown";
@@ -458,5 +460,29 @@ function buildUserMessage({ position, company, rank, education, city }) {
 - 最高学历：${education}
 - 所在城市：${city}
 
-请严格按系统提示的JSON格式返回完整数据，确保所有五项参数都体现在薪酬数据中。`;
+请严格按系统提示的JSON格式返回完整数据，确保所有五项参数都体现在薪酬数据中。
+不得省略任何数组项：rankLadder 必须14条、salaryTrend 必须5条、industryAnalysis 必须25条、cityAnalysis 必须6条。`;
+}
+
+function validateRequiredReportShape(report) {
+  if (report?.invalid === true) return;
+  const counts = [
+    ["rankLadder", 14],
+    ["salaryTrend", 5],
+    ["industryAnalysis", 25],
+    ["cityAnalysis", 6],
+  ];
+  const arraysValid = counts.every(
+    ([field, expected]) => Array.isArray(report?.[field]) && report[field].length === expected,
+  );
+  const objectsValid = ["monthly", "annual", "bonusMonths"].every(
+    (field) => report?.[field] && typeof report[field] === "object",
+  );
+  if (arraysValid && objectsValid && typeof report?.highEarnerTraits === "string") return;
+  const error = new BananaRouterJsonError(
+    "schema_invalid",
+    "BananaRouter 返回的报告结构不完整",
+    "parse",
+  );
+  throw error;
 }

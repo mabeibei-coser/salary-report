@@ -56,7 +56,8 @@ test("准确发送 system/user Gemini body 并解析 JSON fenced content", async
   const body = JSON.parse(String(capturedInit.body));
   assert.equal(body.systemInstruction.parts[0].text, "salary system");
   assert.deepEqual(body.contents, [{ role: "user", parts: [{ text: "salary user" }] }]);
-  assert.equal(body.generationConfig.maxOutputTokens, 8192);
+  assert.equal(body.generationConfig.maxOutputTokens, 16384);
+  assert.equal(body.generationConfig.responseMimeType, "application/json");
   assert.deepEqual(report, { monthly: { p50: 20000 } });
 });
 

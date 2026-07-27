@@ -43,19 +43,21 @@ const validReport = {
     year,
     monthly: 17000 + index * 750,
   })),
-  industryAnalysis: [
-    {
+  industryAnalysis: Array.from({ length: 25 }, (_, index) => ({
       industry: "物业服务",
-      description: "固定测试行业",
+      description: `固定测试行业${index + 1}`,
       monthlyRange: "16000-25000",
       annualRange: "208000-375000",
       demandLevel: "中",
       salaryIncrease: "3.2%",
-    },
-  ],
-  cityAnalysis: [
-    { city: "上海", monthlyAvg: 20000, costIndex: 98, salaryLevel: "高", advantage: "总部岗位集中" },
-  ],
+    })),
+  cityAnalysis: ["上海", "北京", "深圳", "广州", "杭州", "成都"].map((city, index) => ({
+    city,
+    monthlyAvg: 20000 - index * 500,
+    costIndex: 98 - index * 4,
+    salaryLevel: index < 3 ? "高" : "中",
+    advantage: "固定测试城市优势",
+  })),
   highEarnerTraits: "① 数据口径：用年度调薪结果证明贡献\n② 项目复盘：展示薪酬项目结果\n③ 市场对标：准备行业分位数据\n④ 合规能力：说明政策落地经验\n⑤ 系统能力：展示数字化成果\n⑥ 谈薪策略：整体打包薪酬结构\n⑦ 稀缺经验：突出复杂项目经历\n⑧ 结果承诺：明确入职后目标",
 };
 
