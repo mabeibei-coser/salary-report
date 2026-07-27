@@ -3,8 +3,11 @@ import test from "node:test";
 
 import { hasCompletePositionProfile, hasRequiredReportShape } from "../lib/report-schema.js";
 
+const basis = { position: "薪酬专员", company: "民营企业", rank: "P4" };
+
 function makePositionProfile() {
   return {
+    analysisBasis: { ...basis },
     jobPerspective: {
       distinctivePosition: "鲜明定位：该岗位的核心价值在于把业务目标转成可验证结果",
       uniqueInsight: "独到判断：真正稀缺的不是单项技能，而是跨场景闭环能力",
@@ -29,10 +32,10 @@ function makePositionProfile() {
       evidence: `业绩证据 ${i + 1}`,
     })),
     candidateTrend: {
-      trends: ["数量与层次", "技能与证据", "来源与流动"].map((category, i) => ({
+      trends: ["复杂薪酬闭环", "民营机制经验", "系统转型人选"].map((category, i) => ({
         category,
         title: `供给趋势 ${i + 1}`,
-        supplyAnalysis: `近三年该岗位人才供给结构变化 ${i + 1}`,
+        supplyAnalysis: `近三年薪酬专员候选人在民营体系和P4复杂场景中的人才供给变化 ${i + 1}`,
       })),
     },
   };
@@ -40,6 +43,7 @@ function makePositionProfile() {
 
 function makeReport() {
   return {
+    ...basis,
     rankLadder: Array(14).fill({}),
     salaryTrend: Array(5).fill({}),
     industryAnalysis: Array(25).fill({}),
@@ -60,6 +64,7 @@ test("完整岗位画像通过报告结构校验", () => {
 
 test("缺少任一岗位画像模块时拒绝报告，避免缓存或展示半成品", () => {
   for (const field of [
+    "analysisBasis",
     "jobPerspective",
     "coreResponsibilities",
     "coreCompetencies",
@@ -78,6 +83,29 @@ test("人选趋势必须是三点供给侧趋势", () => {
   const report = makeReport();
   report.positionProfile.candidateTrend.trends.pop();
   assert.equal(hasRequiredReportShape(report), false);
+});
+
+test("岗位画像分析基座必须与岗位名称、企业性质和职级一致", () => {
+  const report = makeReport();
+  report.positionProfile.analysisBasis.rank = "P5";
+  assert.equal(hasRequiredReportShape(report, basis), false);
+});
+
+test("人选趋势主题必须动态生成且互不重复", () => {
+  const legacy = makeReport();
+  legacy.positionProfile.candidateTrend.trends.forEach((item, index) => {
+    item.category = ["数量与层次", "技能与证据", "来源与流动"][index];
+  });
+  assert.equal(hasRequiredReportShape(legacy), false);
+
+  const duplicated = makeReport();
+  duplicated.positionProfile.candidateTrend.trends[1].category =
+    duplicated.positionProfile.candidateTrend.trends[0].category;
+  assert.equal(hasRequiredReportShape(duplicated), false);
+
+  const placeholder = makeReport();
+  placeholder.positionProfile.candidateTrend.trends[0].category = "动态主题A";
+  assert.equal(hasRequiredReportShape(placeholder), false);
 });
 
 test("人选趋势拒绝按年份拆分的旧结构", () => {

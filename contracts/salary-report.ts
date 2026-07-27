@@ -53,6 +53,11 @@ export interface CityAnalysisItem {
 }
 
 export interface PositionProfile {
+  analysisBasis: {
+    position: string;
+    company: string;
+    rank: string;
+  };
   jobPerspective: {
     distinctivePosition: string;
     uniqueInsight: string;
@@ -65,7 +70,7 @@ export interface PositionProfile {
   innovationAchievements: { title: string; evidence: string }[];
   candidateTrend: {
     trends: {
-      category: "数量与层次" | "技能与证据" | "来源与流动";
+      category: string;
       title: string;
       supplyAnalysis: string;
     }[];

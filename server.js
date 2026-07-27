@@ -145,8 +145,8 @@ app.post(
       } catch {
         cachedReport = null; // 老记录损坏，落到下面重新调 AI
       }
-      // 旧缓存没有第 5 部分「岗位画像」时不复用，重新生成新版完整报告。
-      if (cachedReport && hasCompletePositionProfile(cachedReport)) {
+      // 旧缓存没有三因素分析基座或仍使用固定趋势模板时不复用，重新生成新版岗位画像。
+      if (cachedReport && hasCompletePositionProfile(cachedReport, { position, company, rank })) {
         const reportId = insertReport({
           userId: req.session.userId,
           userPhone: req.session.phone,
@@ -184,7 +184,7 @@ app.post(
           systemPrompt: SYSTEM_PROMPT,
           userPrompt: messages[1].content,
         });
-        validateRequiredReportShape(candidate);
+        validateRequiredReportShape(candidate, { position, company, rank });
         report = candidate;
       } catch (primaryErr) {
         const category =
@@ -198,7 +198,7 @@ app.post(
     if (!report && BACKUP_ENABLED) {
       try {
         const candidate = await callLLM({ url: BACKUP_URL, apiKey: BACKUP_KEY, model: BACKUP_MODEL, messages });
-        validateRequiredReportShape(candidate);
+        validateRequiredReportShape(candidate, { position, company, rank });
         report = candidate;
       } catch (backupErr) {
         console.error("[queries] 备用模型失败:", backupErr?.message || backupErr);
@@ -338,6 +338,11 @@ const SYSTEM_PROMPT = `你是一位资深的中国薪酬数据分析专家。你
   "cityAnalysis": [{"city": "城市名", "monthlyAvg": 月薪均值, "costIndex": 生活成本指数(以北京=100), "salaryLevel": "高/中/低", "advantage": "该城市优势一句话"}],
   "highEarnerTraits": "该岗位 Top 20% 高薪人群的 8 个谈薪筹码，详见下方第 7 条",
   "positionProfile": {
+    "analysisBasis": {
+      "position": "必须与用户输入的岗位名称完全一致",
+      "company": "必须与用户输入的企业性质完全一致",
+      "rank": "必须与用户输入的职级完全一致"
+    },
     "jobPerspective": {
       "distinctivePosition": "对本岗位价值重心的鲜明判断",
       "uniqueInsight": "区别于通用岗位说明的独到人才判断",
@@ -350,9 +355,9 @@ const SYSTEM_PROMPT = `你是一位资深的中国薪酬数据分析专家。你
     "innovationAchievements": [{"title": "创新方向", "evidence": "可验证的创新业绩表现"}],
     "candidateTrend": {
       "trends": [
-        {"category": "数量与层次", "title": "供给判断", "supplyAnalysis": "近3年市场上可获得人选的数量与职级层次变化"},
-        {"category": "技能与证据", "title": "供给判断", "supplyAnalysis": "近3年候选人的技能组合、经验深度与成果证据变化"},
-        {"category": "来源与流动", "title": "供给判断", "supplyAnalysis": "近3年人才来源、跨界迁移与地域流动变化"}
+        {"category": "动态主题A", "title": "针对性供给判断", "supplyAnalysis": "根据岗位名称、企业性质和职级生成的近3年人选趋势"},
+        {"category": "动态主题B", "title": "针对性供给判断", "supplyAnalysis": "根据岗位名称、企业性质和职级生成的近3年人选趋势"},
+        {"category": "动态主题C", "title": "针对性供给判断", "supplyAnalysis": "根据岗位名称、企业性质和职级生成的近3年人选趋势"}
       ]
     }
   }
@@ -477,8 +482,9 @@ const SYSTEM_PROMPT = `你是一位资深的中国薪酬数据分析专家。你
 
 ### 8. positionProfile 岗位画像（第5部分）
 
-岗位画像必须同时结合【岗位 + 企业性质 + 职级 + 最高学历 + 城市】生成，内容用于招聘、面试和绩效沟通，不是通用岗位说明书。先识别该岗位独有的价值链、关键矛盾和未来变化，再写下列内容：
-- **强岗位定制硬规则**：每条都要出现只有该岗位才成立的工作对象、专业动作、交付物、业务场景或衡量结果。把岗位名替换成另一个岗位后仍然成立的内容必须重写。禁止只写“沟通协作、持续学习、积极主动、提质增效、数字化转型”等通用词。
+岗位画像必须以【岗位名称 + 企业性质 + 职级】作为强制分析基座，最高学历和城市只作补充背景。内容用于招聘、面试和绩效沟通，不是通用岗位说明书。生成前必须完成三因素交叉判断：岗位名称决定专业对象、关键动作和结果链；企业性质决定治理方式、资源约束和典型业务场景；职级决定责任边界、问题复杂度和影响范围。三项缺一不可。
+- **analysisBasis 三因素校验锚点**：position、company、rank 必须分别逐字复制用户输入，用于确认本次画像确实按这三个条件重新生成，不得省略或改写。
+- **三因素定制硬规则**：每个模块都必须同时符合岗位名称、企业性质和职级。内容如果换一个岗位仍成立，或换一种企业性质仍成立，或把职级上下调后仍成立，就必须重写。每条要写出该岗位独有的工作对象、专业动作、交付物、业务场景或衡量结果，并体现该企业性质下的机制环境及该职级的责任深度。禁止只写“沟通协作、持续学习、积极主动、提质增效、数字化转型”等通用词。
 - **jobPerspective 岗位研判**：必须包含以下 3 个非空字段，每项 45-90 字，三项观点不得重复：
   - distinctivePosition（鲜明定位）：明确该岗位当前最核心的价值重心、优先级和取舍；必须给出判断，不能只罗列事实。
   - uniqueInsight（独到判断）：给出一个不显而易见但可用于识别人选的洞察，说明普通合格者与高质量人选的真正分水岭。
@@ -488,8 +494,10 @@ const SYSTEM_PROMPT = `你是一位资深的中国薪酬数据分析专家。你
 - **coreKpis 核心 KPI**：必须刚好 5 项；每项包含 name、metric、target。metric 写清衡量口径，target 给出合理的建议目标或区间；目标必须与岗位、企业性质和职级相称。不得把建议目标描述成用户当前企业的真实指标。
 - **okrDesign OKR 设计**：必须刚好 2 个 Objective；每个 Objective 必须刚好 3 个 Key Result。O 写结果方向，KR 必须可衡量、可在一个年度或季度内验证，不得与 KPI 简单重复。
 - **innovationAchievements 创新业绩表现**：必须刚好 4 项；每项包含 title 和 evidence，描述该岗位领先于常规做法的创新成果，以及应拿出什么量化证据；至少 2 项要体现未来 2-3 年的新工具、新流程或新业务模式。这是业绩标杆示例，不得声称具体人选已经取得这些成果。
-- **candidateTrend 近3年人选趋势解读**：只从人才供给侧汇总近 3 年的结构变化，trends 必须刚好 3 条，不按 2024/2025/2026 分年，不得出现 year/years 字段。每条必须包含 category、title（6-12字鲜明供给判断）和 supplyAnalysis（45-90字岗位定制解读）。category 必须按顺序逐字使用“数量与层次”“技能与证据”“来源与流动”，不得替换或调序。
-- **供给侧硬规则**：每条的主语只能是“市场上的候选人 / 从业者 / 人才供给”，回答“市场上什么人变多或变少、什么能力与成果证据稀缺、人才从哪里转入转出”。title 和 supplyAnalysis 禁止出现“需求、招聘、企业、用人、雇主、偏好、岗位空缺、职位空缺、更受青睐、用工缺口”等需求侧表述。写完必须逐条自检，命中任一禁词就改写。
+- **candidateTrend 近3年人选趋势解读**：只从人才供给侧汇总近 3 年的结构变化，trends 必须刚好 3 条，不按 2024/2025/2026 分年，不得出现 year/years 字段。先根据本次【岗位名称 + 企业性质 + 职级】判断最值得关注的 3 个供给变化，再动态生成 category、title 和 supplyAnalysis；不得预设固定内容。
+- **动态主题硬规则**：category 必须是根据本次三因素提炼的 4-10 字具体主题，三条不得重复，也不得整套使用旧模板“数量与层次 / 技能与证据 / 来源与流动”；输出时必须把示例中的“动态主题A/B/C”替换掉。title 为 6-12 字鲜明供给判断，supplyAnalysis 为 45-90 字针对性解读。三条分别选择本岗位最关键的供给变化，不强求固定维度。
+- **三因素趋势硬规则**：每条都要让读者看出这是“什么岗位的人选、具有什么企业性质背景、处于什么职级成熟度”的趋势。企业性质只能转化为候选人的经历背景或机制经验（例如民营体系、国有体系、外资体系、初创环境），不能写成企业招聘意愿；职级必须体现相应的独立负责深度、复杂度或管理跨度。
+- **供给侧硬规则**：每条的主语只能是“市场上的候选人 / 从业者 / 人才供给”，回答“什么背景的人变多或变少、什么专业能力与成果证据稀缺、什么经历路径正在形成”。title 和 supplyAnalysis 禁止出现“需求、招聘、用人、雇主、偏好、岗位空缺、职位空缺、更受青睐、用工缺口”等需求侧表述。写完必须逐条自检，命中任一禁词就改写。
 - **趋势事实边界**：人选趋势仅做方向性市场研判。没有可靠样本时禁止虚构招聘人数、简历样本量、精确占比或引用不存在的调研机构。`;
 
 function buildUserMessage({ position, company, rank, education, city }) {
@@ -500,12 +508,12 @@ function buildUserMessage({ position, company, rank, education, city }) {
 - 最高学历：${education}
 - 所在城市：${city}
 
-请严格按系统提示的JSON格式返回完整数据，确保所有五项参数都体现在薪酬数据中。
+请严格按系统提示的JSON格式返回完整数据，确保所有五项参数都体现在薪酬数据中。岗位画像必须重点同时结合岗位名称、企业性质和职级，近3年人选趋势必须由这三个条件动态生成，不得套固定三分类。
 不得省略任何数组项：rankLadder 必须14条、salaryTrend 必须5条、industryAnalysis 必须25条、cityAnalysis 必须6条；positionProfile 的岗位研判3项字段必须完整，职责/能力/KPI/OKR/创新业绩/供给侧趋势必须分别为5/5/5/2/4/3条。`;
 }
 
-function validateRequiredReportShape(report) {
-  if (hasRequiredReportShape(report)) return;
+function validateRequiredReportShape(report, expectedBasis) {
+  if (hasRequiredReportShape(report, expectedBasis)) return;
   const error = new BananaRouterJsonError(
     "schema_invalid",
     "BananaRouter 返回的报告结构或供给侧口径不合格",

@@ -98,16 +98,23 @@ function validateReport(report) {
   assert.ok(report.positionProfile?.jobPerspective?.distinctivePosition, "distinctivePosition missing");
   assert.ok(report.positionProfile?.jobPerspective?.uniqueInsight, "uniqueInsight missing");
   assert.ok(report.positionProfile?.jobPerspective?.futureOutlook, "futureOutlook missing");
+  assert.deepEqual(report.positionProfile?.analysisBasis, {
+    position: query.position,
+    company: query.company,
+    rank: query.rank,
+  }, "positionProfile analysisBasis invalid");
   assert.equal(report.positionProfile?.candidateTrend?.trends?.length, 3, "candidateTrend trends invalid");
-  assert.deepEqual(
-    report.positionProfile.candidateTrend.trends.map((item) => item.category),
+  const trendCategories = report.positionProfile.candidateTrend.trends.map((item) => item.category);
+  assert.equal(new Set(trendCategories).size, 3, "candidateTrend categories must be unique");
+  assert.notDeepEqual(
+    trendCategories,
     ["数量与层次", "技能与证据", "来源与流动"],
-    "candidateTrend categories invalid",
+    "candidateTrend categories must be generated for this query",
   );
   const trendText = report.positionProfile.candidateTrend.trends
     .map((item) => `${item.title} ${item.supplyAnalysis}`)
     .join(" ");
-  assert.doesNotMatch(trendText, /需求|招聘|企业|用人|雇主|岗位空缺|职位空缺|更受青睐|用工缺口|偏好/);
+  assert.doesNotMatch(trendText, /需求|招聘|用人|雇主|岗位空缺|职位空缺|更受青睐|用工缺口|偏好/);
   assert.equal("years" in report.positionProfile.candidateTrend, false, "candidateTrend must not split by year");
   assert.equal(
     report.annual.p50,

@@ -17,7 +17,7 @@ const PERSPECTIVE_META = [
   { field: 'futureOutlook', title: '未来 2–3 年将向哪里演进' },
 ];
 
-const SUPPLY_TREND_CATEGORIES = ['数量与层次', '技能与证据', '来源与流动'];
+const PROFILE_BASIS_FIELDS = ['position', 'company', 'rank'];
 
 function ModuleTitle({ type, note }) {
   const { icon: Icon, label } = MODULE_META[type];
@@ -57,12 +57,18 @@ function ListCard({ type, items, renderItem }) {
 
 export default function PositionProfileSection({ data, index, total, locked }) {
   const hasCurrentProfile =
+    PROFILE_BASIS_FIELDS.every(
+      (field) => typeof data?.analysisBasis?.[field] === 'string' && data.analysisBasis[field].trim(),
+    ) &&
     data?.jobPerspective &&
     Array.isArray(data?.candidateTrend?.trends) &&
     data.candidateTrend.trends.length === 3 &&
     data.candidateTrend.trends.every(
-      (item, itemIndex) =>
-        item?.category === SUPPLY_TREND_CATEGORIES[itemIndex] &&
+      (item) =>
+        typeof item?.category === 'string' &&
+        item.category.trim() &&
+        typeof item?.title === 'string' &&
+        item.title.trim() &&
         typeof item?.supplyAnalysis === 'string' &&
         item.supplyAnalysis.trim(),
     );
@@ -71,7 +77,7 @@ export default function PositionProfileSection({ data, index, total, locked }) {
     return (
       <SectionWrapper id="position-profile" title="岗位画像" index={index} total={total}>
         <div className="rounded-lg px-4 py-5 text-center text-[12.5px]" style={{ background: 'var(--cyan-50)', color: 'var(--report-ink-muted)' }}>
-          该历史报告使用旧版岗位画像，请重新查询以生成观点型画像与供给侧人选趋势。
+          该历史报告使用旧版岗位画像，请重新查询以按岗位、企业类型和职级生成针对性画像与供给侧趋势。
         </div>
       </SectionWrapper>
     );

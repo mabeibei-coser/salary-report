@@ -60,6 +60,11 @@ const validReport = {
   })),
   highEarnerTraits: "① 数据口径：用年度调薪结果证明贡献\n② 项目复盘：展示薪酬项目结果\n③ 市场对标：准备行业分位数据\n④ 合规能力：说明政策落地经验\n⑤ 系统能力：展示数字化成果\n⑥ 谈薪策略：整体打包薪酬结构\n⑦ 稀缺经验：突出复杂项目经历\n⑧ 结果承诺：明确入职后目标",
   positionProfile: {
+    analysisBasis: {
+      position: fixedQuery.position,
+      company: fixedQuery.company,
+      rank: fixedQuery.rank,
+    },
     jobPerspective: {
       distinctivePosition: "薪酬专员的价值不是按时算薪，而是把薪酬资源精准导向业务贡献并守住合规底线。",
       uniqueInsight: "高质量人选的分水岭不是熟悉制度条款，而是能从异常数据反推出机制问题并推动闭环。",
@@ -85,9 +90,9 @@ const validReport = {
     })),
     candidateTrend: {
       trends: [
-        { category: "数量与层次", title: "执行型供给充足", supplyAnalysis: "会算薪和维护台账的人选增多，但能独立处理复杂薪酬场景的成熟供给仍然有限。" },
-        { category: "技能与证据", title: "复合能力仍稀缺", supplyAnalysis: "同时具备数据分析、机制理解和系统落地经验的人选占比有限，成果证据分化明显。" },
-        { category: "来源与流动", title: "跨界来源扩大", supplyAnalysis: "人才来源从传统薪酬模块扩展到数据分析与人力系统岗位，技能组合更加多元。" },
+        { category: "复杂薪酬闭环", title: "高级实操供给偏少", supplyAnalysis: "民营体系中能以P4深度独立处理薪酬核算、异常追溯和机制闭环的候选人仍然有限。" },
+        { category: "民营机制经验", title: "多口径人才更稀缺", supplyAnalysis: "薪酬专员人才供给中，兼具市场化激励、成本约束和快速规则调整经历的成熟人选分化明显。" },
+        { category: "系统转型人选", title: "数字化背景正扩展", supplyAnalysis: "具备P4复杂度的人选来源正从传统薪酬执行扩展到人力系统和数据分析背景，复合路径更加多元。" },
       ],
     },
   },
@@ -260,8 +265,13 @@ async function main() {
     assert.equal(firstResult.report.positionProfile.candidateTrend.trends.length, 3);
     assert.deepEqual(
       firstResult.report.positionProfile.candidateTrend.trends.map((item) => item.category),
-      ["数量与层次", "技能与证据", "来源与流动"],
+      ["复杂薪酬闭环", "民营机制经验", "系统转型人选"],
     );
+    assert.deepEqual(firstResult.report.positionProfile.analysisBasis, {
+      position: fixedQuery.position,
+      company: fixedQuery.company,
+      rank: fixedQuery.rank,
+    });
     assert.equal(firstResult.report.positionProfile.jobPerspective.uniqueInsight.length > 0, true);
     assert.equal(providerRequests.length, 2);
     for (const request of providerRequests) {
@@ -270,7 +280,11 @@ async function main() {
       assert.notEqual(request.headers.authorization, `Bearer ${oldIflytek}`);
       assert.notEqual(request.headers.authorization, `Bearer ${oldVite}`);
       assert.match(request.body.systemInstruction.parts[0].text, /薪酬数据分析专家/);
+      assert.match(request.body.systemInstruction.parts[0].text, /岗位名称 \+ 企业性质 \+ 职级/);
+      assert.match(request.body.systemInstruction.parts[0].text, /不得预设固定内容/);
+      assert.doesNotMatch(request.body.systemInstruction.parts[0].text, /category 必须按顺序逐字使用/);
       assert.match(request.body.contents[0].parts[0].text, /岗位名称：薪酬专员/);
+      assert.match(request.body.contents[0].parts[0].text, /不得套固定三分类/);
     }
 
     phase = "读取历史报告";

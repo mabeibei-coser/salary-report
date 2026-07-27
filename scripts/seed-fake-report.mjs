@@ -65,6 +65,11 @@ const report = {
     "⑥ 节奏控制：第一轮报价不当场接受，48 小时回复，回访时再争取 5-8% 提升",
   ].join("\n"),
   positionProfile: {
+    analysisBasis: {
+      position: "Java工程师",
+      company: "民营企业",
+      rank: "P5",
+    },
     jobPerspective: {
       distinctivePosition: "高级 Java 工程师的价值不是多写代码，而是把高风险业务链路做成可持续演进的稳定系统。",
       uniqueInsight: "高质量人选的分水岭不在框架熟练度，而在能否用故障与成本数据证明关键技术取舍。",
@@ -109,9 +114,9 @@ const report = {
     ],
     candidateTrend: {
       trends: [
-        { category: "数量与层次", title: "常规开发供给扩张", supplyAnalysis: "能完成标准业务开发的人选更加充足，但掌握高并发治理和复杂系统演进的成熟供给仍然稀缺。" },
-        { category: "技能与证据", title: "成果证据明显分化", supplyAnalysis: "简历中的框架技能趋同，能用故障率、延迟、吞吐和成本数据证明工程结果的人选仍占少数。" },
-        { category: "来源与流动", title: "跨域工程师增多", supplyAnalysis: "人才供给正从单一后端背景扩展到云原生、数据工程和 AI 应用方向，复合技能组合更丰富。" },
+        { category: "高并发治理", title: "成熟工程供给偏少", supplyAnalysis: "民营体系中能以P5深度独立治理高并发链路和复杂系统演进的Java工程师人选仍然稀缺。" },
+        { category: "结果证据分化", title: "框架经历趋于同质", supplyAnalysis: "Java候选人的框架技能普遍趋同，能以故障率、延迟、吞吐和成本数据证明P5工程结果的人才仍占少数。" },
+        { category: "复合技术路径", title: "跨域背景持续增加", supplyAnalysis: "具备民营业务快速迭代经历的人才来源正从单一后端扩展到云原生、数据工程和AI应用方向。" },
       ],
     },
   },

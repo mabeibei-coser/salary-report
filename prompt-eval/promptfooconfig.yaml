@@ -143,8 +143,11 @@ defaultTest:
     - type: javascript
       value: |
         const p = JSON.parse(output).positionProfile;
+        const r = JSON.parse(output);
         const perspectiveFields = ['distinctivePosition', 'uniqueInsight', 'futureOutlook'];
         const missingPerspective = perspectiveFields.filter(k => typeof p?.jobPerspective?.[k] !== 'string' || !p.jobPerspective[k].trim());
+        const basisFields = ['position', 'company', 'rank'];
+        const basisBad = basisFields.some(k => typeof p?.analysisBasis?.[k] !== 'string' || p.analysisBasis[k].trim() !== String(r?.[k] || '').trim());
         const checks = [
           ['coreResponsibilities', p?.coreResponsibilities, 5],
           ['coreCompetencies', p?.coreCompetencies, 5],
@@ -156,16 +159,19 @@ defaultTest:
         const bad = checks.filter(([, value, count]) => !Array.isArray(value) || value.length !== count);
         const hasYearSplit = Object.prototype.hasOwnProperty.call(p?.candidateTrend || {}, 'years') ||
           (p?.candidateTrend?.trends || []).some(item => Object.prototype.hasOwnProperty.call(item || {}, 'year'));
-        const expectedCategories = ['数量与层次', '技能与证据', '来源与流动'];
-        const trendSemanticBad = (p?.candidateTrend?.trends || []).some((item, index) => {
+        const categories = (p?.candidateTrend?.trends || []).map(item => String(item?.category || '').trim());
+        const categoryBad = new Set(categories).size !== 3 ||
+          categories.some(category => category.length < 4 || category.length > 10 || /动态主题|针对性主题|趋势主题|待生成/.test(category)) ||
+          categories.join('|') === '数量与层次|技能与证据|来源与流动';
+        const trendSemanticBad = (p?.candidateTrend?.trends || []).some((item) => {
           const text = `${item?.title || ''} ${item?.supplyAnalysis || ''}`;
-          return item?.category !== expectedCategories[index] ||
+          return typeof item?.category !== 'string' || !item.category.trim() ||
             typeof item?.supplyAnalysis !== 'string' ||
-            /需求|招聘|企业|用人|雇主|岗位空缺|职位空缺|更受青睐|用工缺口|偏好/.test(text);
+            /需求|招聘|用人|雇主|岗位空缺|职位空缺|更受青睐|用工缺口|偏好/.test(text);
         });
-        return bad.length === 0 && missingPerspective.length === 0 && !hasYearSplit && !trendSemanticBad
+        return bad.length === 0 && missingPerspective.length === 0 && !basisBad && !hasYearSplit && !categoryBad && !trendSemanticBad
           ? true
-          : `岗位画像不合规: 缺观点=${missingPerspective.join('|') || '无'}; 数量=${bad.map(([name, value, count]) => `${name}应为${count}条(实际${value?.length})`).join(', ') || '正常'}; 按年份拆分=${hasYearSplit}; 供给侧语义=${trendSemanticBad}`;
+          : `岗位画像不合规: 缺观点=${missingPerspective.join('|') || '无'}; 三因素基座=${basisBad}; 数量=${bad.map(([name, value, count]) => `${name}应为${count}条(实际${value?.length})`).join(', ') || '正常'}; 按年份拆分=${hasYearSplit}; 动态主题=${categoryBad}; 供给侧语义=${trendSemanticBad}`;
 
 # ─────────────────────────────────────────────────────────────
 # tests：5 个典型场景。每个用例 = 通用 5 条 + 该用例特殊断言
